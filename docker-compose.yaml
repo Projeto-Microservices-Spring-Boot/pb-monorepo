@@ -1,0 +1,91 @@
+name: pb-monorepo
+
+volumes:
+  pg_data:
+  redis_data:
+  kafka_data:
+
+services:
+  pg:
+    image: postgres:18.3-alpine
+    container_name: db_monorepo
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: monorepo
+      POSTGRES_PASSWORD: monorepo
+      POSTGRES_DB: pb_monorepo_db
+    volumes:
+      # TODO => Configurar criacao de vários db para cada serviço. Decidir entre um postgres com vários bancos OU um banco (container postgres) para cada serviço (que deve ser a melhor opção)
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U monorepo" ]
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: pb_monorepo_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  kafka:
+    image: confluentinc/cp-kafka:7.8.0
+    container_name: pb_kafka_broker
+    ports:
+      - "9092:9092" # -> localhost
+      - "29092:29092" # -> docker 
+    environment:
+      CLUSTER_ID: "pb-kafka-cluster" # -> ID único do cluster
+      KAFKA_NODE_ID: "1" # -> ID único do broker
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false" # -> cria tópicos automaticamente ao usá-los (desligar em prod)
+      KAFKA_PROCESS_ROLES: "broker,controller" # -> define que este node é broker + controller
+
+      # 1 -> vem do KAFKA_NODE_ID
+      # kafka -> nome do serviço no compose
+      # 9093 -> vem do listener: CONTROLLER://0.0.0.0:9093 em KAFKA_LISTENERS
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093" # -> lista controllers no quorum
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER" #  -> nome do listener usado pelo controller
+
+      # 9092 → para apps externos (localhost) 
+      # 29092 → para comunicação entre containers Docker
+      # 9093 → para o controller (KRaft)
+      KAFKA_LISTENERS: >
+        PLAINTEXT://0.0.0.0:9092,  DOCKER://0.0.0.0:29092,
+        CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: >
+        PLAINTEXT://localhost:9092, DOCKER://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "DOCKER"
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: kafka-broker-api-versions --bootstrap-server=localhost:9092 || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8181:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "local-kafka"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
+      DYNAMIC_CONFIG_ENABLED: "true"
+
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy
+    container_name: pb_toxiproxy
+    ports:
+      - "8474:8474"
