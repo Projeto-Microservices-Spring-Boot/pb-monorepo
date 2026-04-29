@@ -1,0 +1,18 @@
+pre-commit:
+  commands:
+    check:
+      run: bun format {staged_files}
+      glob: '*.{js,jsx,.mjs,,ts,tsx,mts,css,json,md}'
+      stage_fixed: true
+
+pre-push:
+  commands:
+    validate:
+      glob: '*.{ts,tsx,js,jsx}'
+      run: bun typecheck
+    lint:
+      glob: '*.{ts,tsx,js,jsx}'
+      run: bun lint
+    test:
+      glob: '*.{ts,tsx,js,jsx}'
+      run: bun test:cov
