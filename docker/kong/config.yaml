@@ -1,0 +1,12 @@
+_format_version: "3.0"
+
+# TODO => Configurar os services
+services:
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "*" # TODO => Corrigir para aceitar apenas as origens dos nossos services, frontend etc
+      methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+      headers: [Accept, Content-Type, Authorization]
