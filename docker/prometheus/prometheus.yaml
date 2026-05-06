@@ -1,5 +1,8 @@
+global:
+  scrape_interval: 5s
+
 scrape_configs:
-  - job_name: kong
+  - job_name: kong-metrics
     metrics_path: /metrics
     static_configs:
       - targets: ["kong:8001"]
