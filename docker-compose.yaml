@@ -119,7 +119,7 @@ services:
     image: provectuslabs/kafka-ui:0.7.2
     container_name: kafka-ui
     ports:
-      - "8181:8080"
+      - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: "kafka-ui"
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
