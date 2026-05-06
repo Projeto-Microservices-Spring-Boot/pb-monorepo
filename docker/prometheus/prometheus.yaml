@@ -1,6 +1,7 @@
 global:
   scrape_interval: 5s
 
+# TODO => Configurar os outros services, pois por enquanto só coleta métricas do API GATEWAY
 scrape_configs:
   - job_name: kong-metrics
     metrics_path: /metrics
