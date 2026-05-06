@@ -20,6 +20,7 @@ services:
       POSTGRES_DB: database
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init_databases.sql:/docker-entrypoint-initdb.d/01-init_databases.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U monorepo" ]
 
@@ -115,7 +116,7 @@ services:
       start_period: 40s
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:0.7.2
     container_name: kafka-ui
     ports:
       - "8181:8080"
@@ -137,7 +138,7 @@ services:
   # Prometheus + Grafana
   # ---------------------------------------------------------------------------
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:3.11.3
     container_name: prometheus
     ports:
       - "9090:9090"
@@ -145,7 +146,7 @@ services:
       - ./docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.0.0
     container_name: grafana
     ports:
       - "3002:3000"
