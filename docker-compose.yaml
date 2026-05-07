@@ -6,6 +6,9 @@ volumes:
   kafka_data:
 
 services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL
+  # ---------------------------------------------------------------------------
   pg:
     image: postgres:18.3-alpine
     container_name: db_monorepo
@@ -14,16 +17,19 @@ services:
     environment:
       POSTGRES_USER: monorepo
       POSTGRES_PASSWORD: monorepo
-      POSTGRES_DB: pb_monorepo_db
+      POSTGRES_DB: database
     volumes:
-      # TODO => Configurar criacao de vários db para cada serviço. Decidir entre um postgres com vários bancos OU um banco (container postgres) para cada serviço (que deve ser a melhor opção)
       - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init_databases.sql:/docker-entrypoint-initdb.d/01-init_databases.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U monorepo" ]
 
+  # ---------------------------------------------------------------------------
+  # Redis
+  # ---------------------------------------------------------------------------
   redis:
     image: redis:7.4-alpine
-    container_name: pb_monorepo_cache
+    container_name: cache
     ports:
       - "6379:6379"
     volumes:
@@ -34,9 +40,42 @@ services:
       timeout: 3s
       retries: 20
 
+  # ---------------------------------------------------------------------------
+  # Kong API Gateway
+  # ---------------------------------------------------------------------------
+  kong:
+    image: kong:3.9.1
+    container_name: kong
+    environment:
+      KONG_DATABASE: "off" # Modo DB-less -> (kong sem banco de dados)
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001 # Admin API -> escuta todas interfaces na porta 8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002 # URL da UI
+      KONG_DECLARATIVE_CONFIG: /kong/config.yaml # Caminho do arquivo de config do Kong
+
+      # Logs do Kong API Gateway
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+    ports:
+      - "8000:8000" # Proxy (API)
+      - "8001:8001" # API (Admin)
+      - "8002:8002" # UI -> http://localhost:8002
+      - "8443:8443" # Proxy SSL (HTTPs)
+      - "8444:8444" # API (Admin) (HTTPs)
+    volumes:
+      - ./docker/kong:/kong:ro
+    healthcheck:
+      test: [ "CMD", "kong", "health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Kafka (KRaft) + Kafka UI
+  # ---------------------------------------------------------------------------
   kafka:
     image: confluentinc/cp-kafka:7.8.0
-    container_name: pb_kafka_broker
+    container_name: kafka
     ports:
       - "9092:9092" # -> localhost
       - "29092:29092" # -> docker 
@@ -52,17 +91,18 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093" # -> lista controllers no quorum
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER" #  -> nome do listener usado pelo controller
 
-      # 9092 → para apps externos (localhost) 
-      # 29092 → para comunicação entre containers Docker
-      # 9093 → para o controller (KRaft)
+      # PLAINTEXT 9092 → para apps externos (localhost) 
+      # DOCKER 29092 → para comunicação entre containers Docker
+      # CONTROLLER 9093 → para o controller (KRaft)
       KAFKA_LISTENERS: >
-        PLAINTEXT://0.0.0.0:9092,  DOCKER://0.0.0.0:29092,
+        PLAINTEXT://0.0.0.0:9092,   DOCKER://0.0.0.0:29092,
         CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: >
         PLAINTEXT://localhost:9092, DOCKER://kafka:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT"
       KAFKA_INTER_BROKER_LISTENER_NAME: "DOCKER"
 
+      # Configurações de replicação para tópicos do Kafka definidas como "1" para ambiente de dev
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
@@ -76,16 +116,37 @@ services:
       start_period: 40s
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:0.7.2
+    container_name: kafka-ui
     ports:
-      - "8181:8080"
+      - "8080:8080"
     environment:
-      KAFKA_CLUSTERS_0_NAME: "local-kafka"
+      KAFKA_CLUSTERS_0_NAME: "kafka-ui"
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
       DYNAMIC_CONFIG_ENABLED: "true"
 
+  # ---------------------------------------------------------------------------
+  # Toxiproxy
+  # ---------------------------------------------------------------------------
   toxiproxy:
     image: ghcr.io/shopify/toxiproxy
-    container_name: pb_toxiproxy
+    container_name: toxiproxy
     ports:
       - "8474:8474"
+
+  # ---------------------------------------------------------------------------
+  # Prometheus + Grafana
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:3.11.3
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+
+  grafana:
+    image: grafana/grafana:13.0.0
+    container_name: grafana
+    ports:
+      - "3002:3000"

@@ -1,0 +1,20 @@
+_format_version: "3.0"
+
+# TODO => Configurar os services
+services:
+
+plugins:
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+
+  - name: cors
+    config:
+      origins:
+        - "*" # TODO => Corrigir para aceitar apenas as origens dos nossos services, frontend etc
+      methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+      headers: [Accept, Content-Type, Authorization]
