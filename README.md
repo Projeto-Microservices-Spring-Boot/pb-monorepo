@@ -19,10 +19,9 @@ Explique os microservices, o Discovery Server, o API Gateway e os bancos de dado
 
 ## Microservices
 
-| Serviço   | Responsabilidade | Porta | Banco |
-| --------- | ---------------- | ----- | ----- |
-| service-a | ...              | 8081  | ...   |
-| service-b | ...              | 8082  | ...   |
+| Serviço       | Responsabilidade | Porta | Banco |
+| ------------- | ---------------- | ----- | ----- |
+| Eureka Server | Discovery Server | 8761  | ...   |
 
 ## Como executar
 
@@ -30,7 +29,7 @@ Explique os comandos necessários para subir o projeto.
 
 ## Discovery Server
 
-URL de acesso e serviços registrados.
+O Eureka é utilizado para permitir que os diversos microsserviços se conectem e se comuniquem dinamicamente sem a necessidade de informar os endereços IP e as portas de cada um individualmente, cada serviço se conecta ao Eureka Server que está acessível em: <http://localhost:8761> facilitando a escalabilidade.
 
 ## API Gateway
 

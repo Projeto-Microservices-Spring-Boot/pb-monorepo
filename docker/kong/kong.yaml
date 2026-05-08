@@ -1,7 +1,7 @@
 _format_version: "3.0"
 
-# TODO => Configurar os services
-services:
+# TODO => Configurar os services (não vai ser em array)
+services: []
 
 plugins:
   - name: prometheus

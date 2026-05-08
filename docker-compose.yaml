@@ -11,31 +11,32 @@ services:
   # ---------------------------------------------------------------------------
   pg:
     image: postgres:18.3-alpine
-    container_name: db_monorepo
+    container_name: pb_databases
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: monorepo
-      POSTGRES_PASSWORD: monorepo
-      POSTGRES_DB: database
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: admin
+      POSTGRES_EXTRA_DATABASES: # TODO => adicionar os nomes dos bancos de cada service
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./docker/postgres/init_databases.sql:/docker-entrypoint-initdb.d/01-init_databases.sql:ro
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U monorepo" ]
+      test: ["CMD-SHELL", "pg_isready -U admin"]
 
   # ---------------------------------------------------------------------------
   # Redis
   # ---------------------------------------------------------------------------
   redis:
     image: redis:7.4-alpine
-    container_name: cache
+    container_name: pb_cache
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -45,12 +46,12 @@ services:
   # ---------------------------------------------------------------------------
   kong:
     image: kong:3.9.1
-    container_name: kong
+    container_name: pb_kong
     environment:
       KONG_DATABASE: "off" # Modo DB-less -> (kong sem banco de dados)
       KONG_ADMIN_LISTEN: 0.0.0.0:8001 # Admin API -> escuta todas interfaces na porta 8001
       KONG_ADMIN_GUI_URL: http://localhost:8002 # URL da UI
-      KONG_DECLARATIVE_CONFIG: /kong/config.yaml # Caminho do arquivo de config do Kong
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yaml # Caminho do arquivo de config do Kong
 
       # Logs do Kong API Gateway
       KONG_PROXY_ACCESS_LOG: /dev/stdout
@@ -65,7 +66,7 @@ services:
     volumes:
       - ./docker/kong:/kong:ro
     healthcheck:
-      test: [ "CMD", "kong", "health" ]
+      test: ["CMD", "kong", "health"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -75,10 +76,10 @@ services:
   # ---------------------------------------------------------------------------
   kafka:
     image: confluentinc/cp-kafka:7.8.0
-    container_name: kafka
+    container_name: pb_kafka
     ports:
       - "9092:9092" # -> localhost
-      - "29092:29092" # -> docker 
+      - "29092:29092" # -> docker
     environment:
       CLUSTER_ID: "pb-kafka-cluster" # -> ID único do cluster
       KAFKA_NODE_ID: "1" # -> ID único do broker
@@ -91,7 +92,7 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093" # -> lista controllers no quorum
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER" #  -> nome do listener usado pelo controller
 
-      # PLAINTEXT 9092 → para apps externos (localhost) 
+      # PLAINTEXT 9092 → para apps externos (localhost)
       # DOCKER 29092 → para comunicação entre containers Docker
       # CONTROLLER 9093 → para o controller (KRaft)
       KAFKA_LISTENERS: >
@@ -116,10 +117,10 @@ services:
       start_period: 40s
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:0.7.2
-    container_name: kafka-ui
+    image: kafbat/kafka-ui:v1.5.0
+    container_name: pb_kafka-ui
     ports:
-      - "8181:8080"
+      - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: "kafka-ui"
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
@@ -130,7 +131,7 @@ services:
   # ---------------------------------------------------------------------------
   toxiproxy:
     image: ghcr.io/shopify/toxiproxy
-    container_name: toxiproxy
+    container_name: pb_toxiproxy
     ports:
       - "8474:8474"
 
@@ -138,15 +139,15 @@ services:
   # Prometheus + Grafana
   # ---------------------------------------------------------------------------
   prometheus:
-    image: prom/prometheus:3.11.3
-    container_name: prometheus
+    image: prom/prometheus:v3.11.3
+    container_name: pb_prometheus
     ports:
       - "9090:9090"
     volumes:
       - ./docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
 
   grafana:
-    image: grafana/grafana:13.0.0
-    container_name: grafana
+    image: grafana/grafana:11.5.10
+    container_name: pb_grafana
     ports:
       - "3002:3000"
