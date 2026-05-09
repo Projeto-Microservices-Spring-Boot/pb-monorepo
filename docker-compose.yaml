@@ -151,3 +151,15 @@ services:
     container_name: pb_grafana
     ports:
       - "3002:3000"
+
+  # ---------------------------------------------------------------------------
+  # Microservices + Eureka Server
+  # ---------------------------------------------------------------------------
+
+  eureka:
+    container_name: eureka-server
+    build:
+      context: ./services/eureka-server/docker
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
