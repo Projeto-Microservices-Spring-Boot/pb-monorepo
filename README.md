@@ -68,7 +68,7 @@ As portas expostas são:
 git clone https://github.com/Projeto-Microservices-Spring-Boot/pb-monorepo.git
 
 # Sobe tudo (infra + serviços + frontend)
-docker compose up
+docker compose up --build
 ```
 
 ## Exemplos de requisições ( A fazer)
