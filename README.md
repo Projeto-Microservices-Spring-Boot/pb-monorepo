@@ -39,7 +39,7 @@ pb-monorepo/
 
 | Serviço | Responsabilidade | Porta | Banco |
 | ------- | ---------------- | ----- | ----- |
-|         |                  |       | ...   |
+|         |                  |       |       |
 
 ### Discovery Server
 
@@ -59,6 +59,17 @@ As portas expostas são:
 | ---- | ---------------- | --------- |
 | Kong | API Gateway      | 8002 (UI) |
 
+### Observabilidade
+
+O Prometheus e Grafana estão configurados no `docker-compose.yaml`. O Prometheus recebe as métricas e o Grafana as exibe em dashboards. O Prometheus está configurado em `./docker/prometheus/prometheus.yml` e cada microservices envia métricas via o endpoint /actuator/prometheus.
+
+As portas expostas são:
+
+| Nome       | Responsabilidade | Porta | Usuário | Senha |
+| ---------- | ---------------- | ----- | ------- | ----- |
+| Prometheus | Métricas         | 9090  | admin   | admin |
+| Grafana    | Dashboards       | 3002  | ------- | ----- |
+
 ## Como executar
 
 **Pré-requisitos:** **Java 25** e **Docker & Docker Compose**
@@ -68,7 +79,7 @@ As portas expostas são:
 git clone https://github.com/Projeto-Microservices-Spring-Boot/pb-monorepo.git
 
 # Sobe tudo (infra + serviços + frontend)
-docker compose up --build
+docker compose up
 ```
 
 ## Exemplos de requisições ( A fazer)
