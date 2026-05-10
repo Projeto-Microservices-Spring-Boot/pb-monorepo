@@ -22,6 +22,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin"]
 
@@ -144,13 +145,16 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
     image: grafana/grafana:11.5.10
     container_name: pb_grafana
     ports:
       - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
 
   # ---------------------------------------------------------------------------
   # Microservices + Eureka Server
@@ -159,7 +163,7 @@ services:
   eureka:
     container_name: eureka-server
     build:
-      context: ./services/eureka-server/docker
+      context: ./services/eureka-server/
       dockerfile: Dockerfile
     ports:
       - "8761:8761"
