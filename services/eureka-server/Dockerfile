@@ -1,8 +1,8 @@
-FROM amazoncorretto:25-alpine3.21
+FROM eclipse-temurin:25-jdk-alpine
 
 WORKDIR /app
 
-COPY app.jar .
+COPY target/*.jar app.jar
 
 EXPOSE 8761
 
