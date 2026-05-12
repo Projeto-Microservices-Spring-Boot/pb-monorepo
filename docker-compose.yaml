@@ -4,6 +4,7 @@ volumes:
   pg_data:
   redis_data:
   kafka_data:
+  grafana_data:
 
 services:
   # ---------------------------------------------------------------------------
@@ -18,7 +19,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: admin
-      POSTGRES_EXTRA_DATABASES: # TODO => adicionar os nomes dos bancos de cada service
+      POSTGRES_EXTRA_DATABASES: "store, auth, community, profile, payments, geolocalization, stickers, adm_dashboard"
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
@@ -152,6 +153,8 @@ services:
     container_name: pb_grafana
     ports:
       - "3002:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -165,5 +168,111 @@ services:
     build:
       context: ./services/eureka-server/
       dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
     ports:
       - "8761:8761"
+
+  adm-dashboard:
+    container_name: adm-dashboard-service
+    build:
+      context: ./services/adm-dashboard/
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+    depends_on:
+      pg:
+        condition: service_started
+
+  auth:
+    container_name: auth-service
+    build:
+      context: ./services/auth/
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+    depends_on:
+      pg:
+        condition: service_started
+
+  community:
+    container_name: community-server
+    build:
+      context: ./services/community/
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+    depends_on:
+      pg:
+        condition: service_started
+
+  geolocalization:
+    container_name: geolocalization-service
+    build:
+      context: ./services/geolocalization/
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+    depends_on:
+      pg:
+        condition: service_started
+
+  payments:
+    container_name: payments-service
+    build:
+      context: ./services/payments/
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+    depends_on:
+      pg:
+        condition: service_started
+
+  profile:
+    container_name: profile-service
+    build:
+      context: ./services/profile/
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8086"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+    depends_on:
+      pg:
+        condition: service_started
+
+  stickers:
+    container_name: stickers-service
+    build:
+      context: ./services/stickers/
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8087"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+    depends_on:
+      pg:
+        condition: service_started
+
+  store:
+    container_name: store-service
+    build:
+      context: ./services/store/
+      dockerfile: Dockerfile
+    ports:
+      - "8088:8088"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/actuator/health"]
+    depends_on:
+      pg:
+        condition: service_started
