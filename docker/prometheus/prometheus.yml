@@ -15,3 +15,59 @@ scrape_configs:
       - targets: ["eureka-server:8761"]
         labels:
           application: "Discovery Server"
+
+  - job_name: auth-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["auth:8082"]
+        labels:
+          application: "Auth Service"
+
+  - job_name: adm-dashboard-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["adm-dashboard:8081"]
+        labels:
+          application: "Adm Dashboard Service"
+
+  - job_name: community-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["community:8083"]
+        labels:
+          application: "Community Service"
+
+  - job_name: geolocalization-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["geolocalization:8084"]
+        labels:
+          application: "Geolocalization Services"
+
+  - job_name: payments-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["payments:8085"]
+        labels:
+          application: "Payments Service"
+
+  - job_name: profile-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["profile:8086"]
+        labels:
+          application: "Profile Service"
+
+  - job_name: stickers-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["stickers:8087"]
+        labels:
+          application: "Stickers Service"
+
+  - job_name: store-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["store:8088"]
+        labels:
+          application: "Store Service"
