@@ -1,7 +1,77 @@
 _format_version: "3.0"
 
-# TODO => Configurar os services (não vai ser em array)
-services: []
+services:
+  - name: adm-dashboard-service
+    url: http://adm-dashboard:8081
+    routes:
+      - name: adm-dashboard-routes
+        paths: ["/adm-dashboard"]
+        protocols:
+          - http
+        strip_path: true
+
+  - name: auth-service
+    url: http://auth:8082
+    routes:
+      - name: auth-routes
+        paths: ["/auth"]
+        protocols:
+          - http
+        strip_path: true
+
+  - name: community-service
+    url: http://community:8083
+    routes:
+      - name: community-routes
+        paths: ["/community"]
+        protocols:
+          - http
+        strip_path: true
+
+  - name: geolocalization-service
+    url: http://geolocalization:8084
+    routes:
+      - name: geolocalization-routes
+        paths: ["/geolocalization"]
+        protocols:
+          - http
+        strip_path: true
+
+  - name: payments-service
+    url: http://payments:8085
+    routes:
+      - name: payments-routes
+        paths: ["/payments"]
+        protocols:
+          - http
+        strip_path: true
+
+  - name: profile-service
+    url: http://profile:8086
+    routes:
+      - name: profile-routes
+        paths: ["/profile"]
+        protocols:
+          - http
+        strip_path: true
+
+  - name: stickers-service
+    url: http://stickers:8087
+    routes:
+      - name: stickers-routes
+        paths: ["/stickers"]
+        protocols:
+          - http
+        strip_path: true
+
+  - name: store-service
+    url: http://store:8088
+    routes:
+      - name: store-routes
+        paths: ["/store"]
+        protocols:
+          - http
+        strip_path: true
 
 plugins:
   - name: prometheus
@@ -15,6 +85,6 @@ plugins:
   - name: cors
     config:
       origins:
-        - "*" # TODO => Corrigir para aceitar apenas as origens dos nossos services, frontend etc
+        - "http://localhost:3000" # frontend (dev)
       methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
       headers: [Accept, Content-Type, Authorization]
