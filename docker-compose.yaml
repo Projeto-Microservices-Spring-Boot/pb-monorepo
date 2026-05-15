@@ -84,7 +84,7 @@ services:
       - "29092:29092" # ->  rede interna
       - "29093:29093" # ->  controller
     environment:
-      CLUSTER_ID: "pb-kafka-cluster" # -> ID único do cluster
+      CLUSTER_ID: XVmXn3yFSg-B4UD_uAgnCw  # -> ID único do cluster
       KAFKA_NODE_ID: "1" # -> ID único do broker
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false" # -> cria tópicos automaticamente ao usá-los (desligar em prod)
       KAFKA_PROCESS_ROLES: "broker,controller" # -> define que este node é broker + controller
