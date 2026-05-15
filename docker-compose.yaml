@@ -81,29 +81,24 @@ services:
     container_name: pb_kafka
     ports:
       - "9092:9092" # -> localhost
-      - "29092:29092" # -> docker
+      - "29092:29092" # ->  rede interna
+      - "29093:29093" # ->  controller
     environment:
       CLUSTER_ID: "pb-kafka-cluster" # -> ID único do cluster
       KAFKA_NODE_ID: "1" # -> ID único do broker
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false" # -> cria tópicos automaticamente ao usá-los (desligar em prod)
       KAFKA_PROCESS_ROLES: "broker,controller" # -> define que este node é broker + controller
 
-      # 1 -> vem do KAFKA_NODE_ID
-      # kafka -> nome do serviço no compose
-      # 9093 -> vem do listener: CONTROLLER://0.0.0.0:9093 em KAFKA_LISTENERS
-      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093" # -> lista controllers no quorum
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER" #  -> nome do listener usado pelo controller
+      # QUORUM_VOTERS -> elege o Controller master do cluster quando o atual cai
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
 
-      # PLAINTEXT 9092 → para apps externos (localhost)
-      # DOCKER 29092 → para comunicação entre containers Docker
-      # CONTROLLER 9093 → para o controller (KRaft)
-      KAFKA_LISTENERS: >
-        PLAINTEXT://0.0.0.0:9092,   DOCKER://0.0.0.0:29092,
-        CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: >
-        PLAINTEXT://localhost:9092, DOCKER://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT"
-      KAFKA_INTER_BROKER_LISTENER_NAME: "DOCKER"
+      # PLAINTEXT 9092 → escuta na rede interna do container
+      # PLAINTEXT_HOST 29092 → escuta no localhost
+      # CONTROLLER 29093 → escuta o controller na rede interna do container
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
 
       # Configurações de replicação para tópicos do Kafka definidas como "1" para ambiente de dev
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
