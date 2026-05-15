@@ -25,7 +25,7 @@ services:
       - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
 
   # ---------------------------------------------------------------------------
   # Redis
@@ -179,7 +179,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
 
   auth:
     container_name: auth-service
@@ -192,7 +192,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
 
   community:
     container_name: community-server
@@ -205,7 +205,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
 
   geolocalization:
     container_name: geolocalization-service
@@ -218,7 +218,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
 
   payments:
     container_name: payments-service
@@ -231,7 +231,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
 
   profile:
     container_name: profile-service
@@ -244,7 +244,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
 
   stickers:
     container_name: stickers-service
@@ -257,7 +257,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
 
   store:
     container_name: store-service
@@ -270,4 +270,4 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8088/actuator/health"]
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
