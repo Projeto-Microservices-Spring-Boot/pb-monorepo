@@ -90,7 +90,19 @@ As portas expostas são:
 
 ### Observabilidade
 
-O Prometheus e o Grafana estão configurados no `docker-compose.yaml` para dar visibilidade ao ambiente local. Cada microservice expõe seus endpoints do Spring Boot Actuator, incluindo `health` para verificação de disponibilidade e `prometheus` para coleta de métricas. O Prometheus realiza o scrape dessas métricas usando a configuração de `./docker/prometheus/prometheus.yml`, e o Grafana consome esses dados para exibir dashboards e facilitar a análise de saúde, desempenho e comportamento dos serviços.
+O Prometheus, Grafana e o Jaeger estão configurados no `docker-compose.yaml` para dar visibilidade ao ambiente local. Cada microservice expõe endpoints do Spring Boot Actuator que fornecem informações de saúde, métricas e diagnóstico. As métricas são coletadas pelo Micrometer (registry Prometheus) e expostas no endpoint `/actuator/prometheus`, que o Prometheus faz scrape de acordo com `./docker/prometheus/prometheus.yml`. O Grafana consome esses dados para exibir dashboards prontos e facilitar a análise de saúde, desempenho e comportamento dos serviços.
+
+Como usar (local / desenvolvimento):
+
+- Endpoints principais:
+- `/actuator/health` — estado de saúde do serviço.
+- `/actuator/metrics` — métricas agregadas pelo Micrometer.
+- `/actuator/prometheus` — ponto de integração com Prometheus (formato de scraping).
+
+A forma mais direta de consultar
+
+- Healthcheck: `http://localhost:8082/actuator/health`
+- Métricas: `http://localhost:8082/actuator/prometheus`
 
 As portas expostas são:
 
@@ -98,6 +110,7 @@ As portas expostas são:
 | ---------- | ---------------- | ----- | ------- | ----- |
 | Prometheus | Métricas         | 9090  | admin   | admin |
 | Grafana    | Dashboards       | 3002  | ------- | ----- |
+| Jaeger     | Tracing          | 16686 | ------- | ----- |
 
 ## Como executar
 
