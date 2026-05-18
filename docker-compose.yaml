@@ -155,6 +155,21 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
 
   # ---------------------------------------------------------------------------
+  # Jaeger Tracing
+  # ---------------------------------------------------------------------------
+
+  jaeger:
+    container_name: pb_tracing
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - "16686:16686" # UI
+      - "14268:14268" # Traces HTTP
+      - "4317:4317" # OTLP/gRPC
+      - "4318:4318" # OTLP/HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+
+  # ---------------------------------------------------------------------------
   # Microservices + Eureka Server
   # ---------------------------------------------------------------------------
 
