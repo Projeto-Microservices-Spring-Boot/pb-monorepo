@@ -24,7 +24,17 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
 
+logging:
+  level:
+    "[com.edu.infnet.pb]": TRACE
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+
 management:
+  tracing:
+    sampling:
+      probability: 1.0 # 100% dos tracings gerados será exportado
+
   endpoints:
     web:
       exposure:
@@ -32,3 +42,14 @@ management:
           - health
           - prometheus
           - info
+
+otel:
+  exporter:
+    otlp:
+      endpoint: "http://jaeger:4318"
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
