@@ -19,7 +19,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: admin
-      POSTGRES_EXTRA_DATABASES: "store, auth, community, profile, payments, geolocalization, stickers, adm_dashboard"
+      POSTGRES_EXTRA_DATABASES: "store, community, users, payments, geolocalization, stickers, adm_dashboard"
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
@@ -84,7 +84,7 @@ services:
       - "29092:29092" # ->  rede interna
       - "29093:29093" # ->  controller
     environment:
-      CLUSTER_ID: XVmXn3yFSg-B4UD_uAgnCw  # -> ID único do cluster
+      CLUSTER_ID: XVmXn3yFSg-B4UD_uAgnCw # -> ID único do cluster
       KAFKA_NODE_ID: "1" # -> ID único do broker
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false" # -> cria tópicos automaticamente ao usá-los (desligar em prod)
       KAFKA_PROCESS_ROLES: "broker,controller" # -> define que este node é broker + controller
@@ -181,10 +181,10 @@ services:
       pg:
         condition: service_healthy
 
-  auth:
-    container_name: auth-service
+  users:
+    container_name: users-service
     build:
-      context: ./services/auth/
+      context: ./services/users/
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
@@ -229,19 +229,6 @@ services:
       - "8085:8085"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
-    depends_on:
-      pg:
-        condition: service_healthy
-
-  profile:
-    container_name: profile-service
-    build:
-      context: ./services/profile/
-      dockerfile: Dockerfile
-    ports:
-      - "8086:8086"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
     depends_on:
       pg:
         condition: service_healthy

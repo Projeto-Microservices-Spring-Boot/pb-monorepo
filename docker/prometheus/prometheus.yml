@@ -16,13 +16,6 @@ scrape_configs:
         labels:
           application: "Discovery Server"
 
-  - job_name: auth-metrics
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ["auth:8082"]
-        labels:
-          application: "Auth Service"
-
   - job_name: adm-dashboard-metrics
     metrics_path: /actuator/prometheus
     static_configs:
@@ -51,12 +44,12 @@ scrape_configs:
         labels:
           application: "Payments Service"
 
-  - job_name: profile-metrics
+  - job_name: users-metrics
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["profile:8086"]
+      - targets: ["users:8082"]
         labels:
-          application: "Profile Service"
+          application: "users Service"
 
   - job_name: stickers-metrics
     metrics_path: /actuator/prometheus

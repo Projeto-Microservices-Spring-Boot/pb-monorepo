@@ -10,15 +10,6 @@ services:
           - http
         strip_path: true
 
-  - name: auth-service
-    url: http://auth:8082
-    routes:
-      - name: auth-routes
-        paths: ["/auth"]
-        protocols:
-          - http
-        strip_path: true
-
   - name: community-service
     url: http://community:8083
     routes:
@@ -46,11 +37,11 @@ services:
           - http
         strip_path: true
 
-  - name: profile-service
-    url: http://profile:8086
+  - name: users-service
+    url: http://users:8082
     routes:
-      - name: profile-routes
-        paths: ["/profile"]
+      - name: users-routes
+        paths: ["/users"]
         protocols:
           - http
         strip_path: true
