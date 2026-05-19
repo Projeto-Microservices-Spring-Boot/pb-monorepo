@@ -1,5 +1,8 @@
 _format_version: "3.0"
 
+# TODO => separar as rotas públicas e privadas de cada microservice e adicionar plugin JWT onde necessário,
+# TODO => configurar o plugin de  rate limit onde necessário,
+
 services:
   - name: adm-dashboard-service
     url: http://adm-dashboard:8081
@@ -40,11 +43,26 @@ services:
   - name: users-service
     url: http://users:8082
     routes:
-      - name: users-routes
-        paths: ["/users"]
+      - name: users-public-routes
+        paths:
+          - /users/public # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
         protocols:
           - http
         strip_path: true
+
+      - name: users-private-routes
+        paths:
+          - /users/private # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
+        protocols:
+          - http
+        plugins:
+          - name: jwt
+            config:
+              header_names:
+                - authorization
+              claims_to_verify:
+                - exp
+                - nbf
 
   - name: stickers-service
     url: http://stickers:8087
@@ -63,6 +81,13 @@ services:
         protocols:
           - http
         strip_path: true
+
+consumers:
+  - username: frontend
+    jwt_secrets:
+      - key: my-frontend
+        secret: segredo-super-secreto # usar variável de ambiente
+        algorithm: HS256
 
 plugins:
   - name: prometheus
