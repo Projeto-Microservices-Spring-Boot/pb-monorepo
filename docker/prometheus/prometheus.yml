@@ -49,7 +49,7 @@ scrape_configs:
     static_configs:
       - targets: ["users:8082"]
         labels:
-          application: "users Service"
+          application: "Users Service"
 
   - job_name: stickers-metrics
     metrics_path: /actuator/prometheus
