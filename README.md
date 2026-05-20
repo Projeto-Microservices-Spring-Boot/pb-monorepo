@@ -108,8 +108,8 @@ As portas expostas são:
 
 | Nome       | Responsabilidade | Porta | Usuário | Senha |
 | ---------- | ---------------- | ----- | ------- | ----- |
-| Prometheus | Métricas         | 9090  | admin   | admin |
-| Grafana    | Dashboards       | 3002  | ------- | ----- |
+| Prometheus | Métricas         | 9090  |         |       |
+| Grafana    | Dashboards       | 3002  | admin   | admin |
 | Jaeger     | Tracing          | 16686 | ------- | ----- |
 
 ## Como executar
