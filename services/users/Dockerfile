@@ -1,4 +1,7 @@
-FROM eclipse-temurin:25-jdk-alpine AS deps
+ARG ECLIPSE_TEMURIN_VERSION_JDK=25-jdk-alpine
+ARG ECLIPSE_TEMURIN_VERSION_JRE=25-jre-alpine
+
+FROM eclipse-temurin:${ECLIPSE_TEMURIN_VERSION_JDK} AS deps
 
 RUN apk add --no-cache maven
 RUN apk add --no-cache curl
@@ -15,7 +18,7 @@ COPY src ./src
 
 RUN mvn clean package -DskipTests 
 
-FROM  eclipse-temurin:25-jre-alpine AS run
+FROM eclipse-temurin:${ECLIPSE_TEMURIN_VERSION_JRE} AS run
 
 WORKDIR /app
 
