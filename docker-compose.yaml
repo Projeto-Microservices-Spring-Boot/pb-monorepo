@@ -196,6 +196,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   users:
     container_name: users-service
@@ -209,6 +211,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   community:
     container_name: community-server
@@ -222,6 +226,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   geolocalization:
     container_name: geolocalization-service
@@ -235,6 +241,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   payments:
     container_name: payments-service
@@ -248,6 +256,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   stickers:
     container_name: stickers-service
@@ -261,6 +271,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   store:
     container_name: store-service
@@ -274,3 +286,5 @@ services:
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
