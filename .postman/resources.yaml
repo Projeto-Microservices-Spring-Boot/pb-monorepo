@@ -1,12 +1,8 @@
 workspace:
   id: 004eef07-c43d-4087-b49e-49e872cb8ac7
-
 localResources:
   collections:
     - ../postman/collections/PB Microservices
-
-# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
-
 cloudResources:
   collections:
-    ../postman/collections/PB Microservices: 53739899-9b1d60dc-db57-4792-9d57-6f724bbe6700
+    ../postman/collections/PB Microservices: 53739899-4bb6944f-60ba-4503-9000-7699db1e53cb
