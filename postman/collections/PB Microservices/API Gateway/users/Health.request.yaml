@@ -1,5 +1,6 @@
 $kind: http-request
-url: "{{gatewayUrl}}/auth/actuator/health"
+name: Health
+url: "{{gatewayUrl}}/users/actuator/health"
 method: GET
 headers:
   Accept: application/json
