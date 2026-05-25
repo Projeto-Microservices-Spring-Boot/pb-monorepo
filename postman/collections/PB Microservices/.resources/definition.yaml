@@ -1,13 +1,13 @@
 $kind: collection
+name: PB Microservices
 description: Coleção base para validar os microservices isolados e os mesmos fluxos expostos pelo API Gateway do Kong
 variables:
   gatewayUrl: http://localhost:8000
   eurekaUrl: http://localhost:8761
   admDashboardUrl: http://localhost:8081
-  authUrl: http://localhost:8082
+  usersUrl: http://localhost:8082
   communityUrl: http://localhost:8083
   geolocalizationUrl: http://localhost:8084
   paymentsUrl: http://localhost:8085
-  profileUrl: http://localhost:8086
   stickersUrl: http://localhost:8087
   storeUrl: http://localhost:8088

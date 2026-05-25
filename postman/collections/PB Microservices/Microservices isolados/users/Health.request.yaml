@@ -1,5 +1,6 @@
 $kind: http-request
-url: "{{profileUrl}}/actuator/health"
+name: Health
+url: i/actuator/health
 method: GET
 headers:
   Accept: application/json
