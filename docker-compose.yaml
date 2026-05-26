@@ -181,6 +181,9 @@ services:
       dockerfile: Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     ports:
       - "8761:8761"
 
@@ -193,6 +196,9 @@ services:
       - "8081:8081"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
@@ -208,6 +214,9 @@ services:
       - "8082:8082"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
@@ -223,6 +232,9 @@ services:
       - "8083:8083"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
@@ -238,6 +250,9 @@ services:
       - "8084:8084"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
@@ -253,6 +268,9 @@ services:
       - "8085:8085"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
@@ -268,6 +286,9 @@ services:
       - "8087:8087"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
@@ -283,6 +304,9 @@ services:
       - "8088:8088"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
