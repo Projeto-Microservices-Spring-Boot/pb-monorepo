@@ -9,8 +9,19 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    defer-datasource-initialization: true # Spring espera o Hibernate criar/atualizar os schemas
+    show-sql: true
     hibernate:
       ddl-auto: update
+
+  sql: # roda scripts SQL ao inicializa o app
+    init:
+      mode: always # sempre ira rodar os scripts SQL ao iniciar o app
+      data-locations: classpath:database/seed/*.sql # local dos scripts SQL de seed
+
+jwt:
+  public-key: classpath:app.key.pub
+  private-key: classpath:app.key
 
 server:
   port: 8082
