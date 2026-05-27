@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{usersUrl}}/auth/login"
+method: POST
+body:
+  type: json
+  content: "{\r\n    \r\n}"
+order: 3000

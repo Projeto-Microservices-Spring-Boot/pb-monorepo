@@ -5,8 +5,10 @@ localResources:
   collections:
     - ..\postman\collections\PB Microservices
 
+
 # Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
 
 cloudResources:
   collections:
     ..\postman\collections\PB Microservices: 53739899-4bb6944f-60ba-4503-9000-7699db1e53cb
+e53cb
