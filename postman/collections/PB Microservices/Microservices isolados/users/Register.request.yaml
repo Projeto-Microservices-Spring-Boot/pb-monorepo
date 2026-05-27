@@ -1,0 +1,8 @@
+$kind: http-request
+name: Register
+url: "{{usersUrl}}/auth/register"
+method: POST
+body:
+  type: json
+  content: "{\r\n    \r\n}"
+order: 2486
