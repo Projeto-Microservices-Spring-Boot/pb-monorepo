@@ -22,7 +22,7 @@ services:
       POSTGRES_EXTRA_DATABASES: "store, community, users, payments, geolocalization, stickers, adm_dashboard"
     volumes:
       - pg_data:/var/lib/postgresql
-      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
