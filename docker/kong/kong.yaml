@@ -63,6 +63,7 @@ services:
               claims_to_verify:
                 - exp
                 - nbf
+              key_claim_name: iss
 
   - name: stickers-service
     url: http://stickers:8087
@@ -85,9 +86,27 @@ services:
 consumers:
   - username: frontend
     jwt_secrets:
-      - key: my-frontend
-        secret: segredo-super-secreto # usar variável de ambiente
-        algorithm: HS256
+      # IDE lança um erro 'Missing property "secret"' se não passar o 'secret' mas o kong funciona.
+      # Isso aparentemente é um bug da extensão YAML do VsCode, o mesmo acontece com o application.yaml.
+      # A IA do Kong disse que não é necessário usar o 'secret' quando o algorithm é 'RS256' mas ela disse que pode deixar.
+      - key: frontend-NextJs
+        secret: segredo-super-secreto
+        algorithm: RS256
+        rsa_public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAn5EKQXZtMqdG9/1pISk2
+          9y++BhNQ9+pENT2j1MurQgY4lOYMNf8jpvxb+NISKrxKIhgGPlJzCf/+NXFDxhFf
+          ENbSAkpDGwUmUU/dq0dL12c3witpYNXhI+QfooyENadjf409lpEE9aw5eP+fXItS
+          wlfqv7mx5q/UPjpHm/b8evnt+/I+FTI41fF8a1aN1tdFg5msZD4mGjWN1SlXm5N0
+          SicBWAz099wHqoejyrGFY9gk0jcoGUTn7+0FrVRTLbpPPee/mWiAV2/by8o87AJw
+          FgLw8b3tgrCuN3WMjJJvaQv5jEOepWeHnlRuvIi2P9CzyUweXO1hsbUCFjqlQpjt
+          GSLPl2DXExafD82jcLEcMF1Xalr6sX76WXwMVhjdskvKB+O947T3Pq5FhyIdjduZ
+          NQnHkRtwA1EZKijwHtpcAlHo5t/XxWfVhwQXXTXZbcMA0sv2MwX8WwGQiIqjU2/D
+          JyzurQmSs0BlKNdEb7BZ6f/jBFjO1tfe6Zmt84WJElEkzhmXBNv+pldZFa5ejo2K
+          QnUU6I/60SqOAwUGZ9lJI6EZjpmTGfERk97I0gqSO5cFZ84sKYyPE67yfktBU/7H
+          DggzB7SX2ZHvLhH4znikGm0SUMtO57RUi83PRr9tvCQVvWzpNZ88glqmLjkw3I+e
+          Ixk7kDGzSVFj19tiqa4bHCECAwEAAQ==
+          -----END PUBLIC KEY-----
 
 plugins:
   - name: prometheus
