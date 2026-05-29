@@ -1,0 +1,8 @@
+# Garantir que scripts shell usem finais de linha LF para evitar o erro:
+# "/bin/bash^M: bad interpreter" dentro de containers Docker.
+
+# Problema: em máquinas Windows alguns editores/Git contem arquivos com finais de linha CRLF.
+# Ao forçar LF no repositório evitamos esse problema para todos os colaboradores.
+
+*.sh text eol=lf # qualquer arquivo .sh
+docker/postgres/init-databases.sh text eol=lf # especificamente o arquivo que cria os bancos de dados
