@@ -177,7 +177,7 @@ services:
   eureka:
     container_name: eureka-server
     build:
-      context: ./services/eureka-server/
+      context: ../services/eureka-server/
       dockerfile: Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
@@ -190,7 +190,7 @@ services:
   adm-dashboard:
     container_name: adm-dashboard-service
     build:
-      context: ./services/adm-dashboard/
+      context: ../services/adm-dashboard/
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
@@ -208,7 +208,7 @@ services:
   users:
     container_name: users-service
     build:
-      context: ./services/users/
+      context: ../services/users/
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
@@ -226,7 +226,7 @@ services:
   community:
     container_name: community-server
     build:
-      context: ./services/community/
+      context: ../services/community/
       dockerfile: Dockerfile
     ports:
       - "8083:8083"
@@ -244,7 +244,7 @@ services:
   geolocalization:
     container_name: geolocalization-service
     build:
-      context: ./services/geolocalization/
+      context: ../services/geolocalization/
       dockerfile: Dockerfile
     ports:
       - "8084:8084"
@@ -262,7 +262,7 @@ services:
   payments:
     container_name: payments-service
     build:
-      context: ./services/payments/
+      context: ../services/payments/
       dockerfile: Dockerfile
     ports:
       - "8085:8085"
@@ -280,7 +280,7 @@ services:
   stickers:
     container_name: stickers-service
     build:
-      context: ./services/stickers/
+      context: ../services/stickers/
       dockerfile: Dockerfile
     ports:
       - "8087:8087"
@@ -298,7 +298,7 @@ services:
   store:
     container_name: store-service
     build:
-      context: ./services/store/
+      context: ../services/store/
       dockerfile: Dockerfile
     ports:
       - "8088:8088"
