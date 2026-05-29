@@ -22,7 +22,7 @@ services:
       POSTGRES_EXTRA_DATABASES: "store, community, users, payments, geolocalization, stickers, adm_dashboard"
     volumes:
       - pg_data:/var/lib/postgresql
-      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
+      - ./postgres:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
@@ -66,7 +66,7 @@ services:
       - "8443:8443" # Proxy SSL (HTTPs)
       - "8444:8444" # API (Admin) (HTTPs)
     volumes:
-      - ./docker/kong:/kong:ro
+      - ./kong:/kong:ro
     healthcheck:
       test: ["CMD", "kong", "health"]
       interval: 10s
@@ -141,7 +141,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
     image: grafana/grafana:11.5.10
@@ -150,7 +150,7 @@ services:
       - "3002:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./docker/grafana:/etc/grafana/conf
+      - ./grafana:/etc/grafana/conf
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -177,100 +177,138 @@ services:
   eureka:
     container_name: eureka-server
     build:
-      context: ./services/eureka-server/
+      context: ../services/eureka-server/
       dockerfile: Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     ports:
       - "8761:8761"
 
   adm-dashboard:
     container_name: adm-dashboard-service
     build:
-      context: ./services/adm-dashboard/
+      context: ../services/adm-dashboard/
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   users:
     container_name: users-service
     build:
-      context: ./services/users/
+      context: ../services/users/
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   community:
     container_name: community-server
     build:
-      context: ./services/community/
+      context: ../services/community/
       dockerfile: Dockerfile
     ports:
       - "8083:8083"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   geolocalization:
     container_name: geolocalization-service
     build:
-      context: ./services/geolocalization/
+      context: ../services/geolocalization/
       dockerfile: Dockerfile
     ports:
       - "8084:8084"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   payments:
     container_name: payments-service
     build:
-      context: ./services/payments/
+      context: ../services/payments/
       dockerfile: Dockerfile
     ports:
       - "8085:8085"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   stickers:
     container_name: stickers-service
     build:
-      context: ./services/stickers/
+      context: ../services/stickers/
       dockerfile: Dockerfile
     ports:
       - "8087:8087"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  
 
   store:
     container_name: store-service
     build:
-      context: ./services/store/
+      context: ../services/store/
       dockerfile: Dockerfile
     ports:
       - "8088:8088"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
     depends_on:
       pg:
         condition: service_healthy
+      kong: 
+         condition: service_healthy  

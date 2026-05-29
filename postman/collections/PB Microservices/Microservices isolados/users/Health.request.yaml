@@ -1,0 +1,7 @@
+$kind: http-request
+name: Health
+url: "{{usersUrl}}/actuator/"
+method: GET
+headers:
+  Accept: application/json
+order: 1000

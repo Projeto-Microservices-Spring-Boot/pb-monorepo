@@ -1,4 +1,4 @@
-# Garantir que scripts shell usem finais de linha LF para evitar o erro:
+# Garantir que scripts shell usem finais de linha LF para evitar o erro: 
 # "/bin/bash^M: bad interpreter" dentro de containers Docker.
 
 # Problema: em máquinas Windows alguns editores/Git contem arquivos com finais de linha CRLF.
