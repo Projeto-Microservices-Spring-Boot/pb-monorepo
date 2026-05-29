@@ -4,5 +4,13 @@ url: "{{usersUrl}}/auth/register"
 method: POST
 body:
   type: json
-  content: "{\r\n    \r\n}"
+  content: "{\r
+
+    \    \"email\":\"teste@email.com\",\r
+
+    \    \"password\": \"123456678\",\r
+
+    \    \"name\": \"Nathankkkkkk\"\r
+
+    }"
 order: 2486
