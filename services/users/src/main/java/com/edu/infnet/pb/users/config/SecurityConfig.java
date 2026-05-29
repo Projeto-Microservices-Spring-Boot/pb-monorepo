@@ -6,6 +6,7 @@ import java.security.interfaces.RSAPublicKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -36,7 +37,8 @@ public class SecurityConfig {
     http
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/actuator/**").permitAll() /* Autoriza os endpoints do Actuator sem necessitar de auth */
-            .anyRequest().authenticated())
+            .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+            .requestMatchers(HttpMethod.POST, "/auth/login").permitAll())
         .httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
