@@ -2,6 +2,8 @@ package com.edu.infnet.pb.users.domain.models;
 
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import com.edu.infnet.pb.users.domain.enums.Roles;
 
 import jakarta.persistence.Column;
@@ -37,4 +39,12 @@ public class User {
 
   @Enumerated(EnumType.STRING)
   private Roles roles;
+
+  @Column(nullable = true)
+  private String refreshToken;
+
+  public Boolean ComparePassword(String password, PasswordEncoder passwordEncoder) {
+    return passwordEncoder.matches(password, this.password);
+  }
+
 }
