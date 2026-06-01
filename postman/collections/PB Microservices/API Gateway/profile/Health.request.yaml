@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{gatewayUrl}}/profile/actuator/health"
+method: GET
+headers:
+  Accept: application/json
+order: 1000

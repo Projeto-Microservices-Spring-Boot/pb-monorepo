@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{gatewayUrl}}/adm-dashboard/actuator/health"
+method: GET
+headers:
+  Accept: application/json
+order: 1000
