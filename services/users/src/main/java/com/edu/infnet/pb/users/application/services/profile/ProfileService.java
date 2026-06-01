@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.edu.infnet.pb.users.infrastructure.repositories.ProfileRepository;
 import com.edu.infnet.pb.users.presentation.dtos.auth.ProfileResponseDto;
 import com.edu.infnet.pb.users.shared.exceptions.ResourceNotFoundException;
+import com.edu.infnet.pb.users.shared.exceptions.UnauthorizedException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +29,13 @@ public class ProfileService {
       throw new ResourceNotFoundException("Usuário não encontrado!");
     }
 
-    return new ProfileResponseDto(userExists.get().getName());
+    var user = userExists.get();
+
+    if (user.getRefreshToken() == null) {
+      logger.error("Usuário não está autenticado!");
+      throw new UnauthorizedException("Usuário não está autenticado!");
+    }
+
+    return new ProfileResponseDto(user.getName());
   }
 }
