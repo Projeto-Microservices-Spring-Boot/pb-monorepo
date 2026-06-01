@@ -5,14 +5,11 @@ import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.edu.infnet.pb.users.domain.enums.Roles;
 import com.edu.infnet.pb.users.domain.models.User;
@@ -21,6 +18,8 @@ import com.edu.infnet.pb.users.presentation.dtos.auth.LoginRequestDto;
 import com.edu.infnet.pb.users.presentation.dtos.auth.LoginResponseDto;
 import com.edu.infnet.pb.users.presentation.dtos.auth.RegisterRequestDto;
 import com.edu.infnet.pb.users.presentation.dtos.auth.RegisterResponseDto;
+import com.edu.infnet.pb.users.shared.exceptions.BadRequestException;
+import com.edu.infnet.pb.users.shared.exceptions.ConflictException;
 import com.edu.infnet.pb.users.shared.exceptions.ResourceNotFoundException;
 
 import jakarta.transaction.Transactional;
@@ -45,7 +44,7 @@ public class AuthService {
 
     if (userAlreadyExists.isPresent()) {
       logger.error("Erro ao criar conta, usuário já existente");
-      throw new ResponseStatusException(HttpStatus.CONFLICT);
+      throw new ConflictException("Erro ao criar conta, usuário já existente");
     }
 
     var user = new User();
@@ -60,8 +59,7 @@ public class AuthService {
     return new RegisterResponseDto(
         createdUser.getName(),
         createdUser.getEmail(),
-        createdUser.getRoles(),
-        null);
+        createdUser.getRoles());
   }
 
   @Transactional
@@ -71,12 +69,12 @@ public class AuthService {
 
     if (user.isEmpty()) {
       logger.error("Erro ao fazer login, dados inválidos!");
-      throw new BadCredentialsException("Dados inválidos!");
+      throw new BadRequestException("Dados inválidos!");
     }
 
     if (!user.get().ComparePassword(loginRequest.password(), bcrypt)) {
       logger.error("Erro ao fazer login, dados inválidos!");
-      throw new BadCredentialsException("Dados inválidos!");
+      throw new BadRequestException("Dados inválidos!");
     }
 
     var claims = JwtClaimsSet.builder()
@@ -117,5 +115,6 @@ public class AuthService {
     repo.save(user);
 
     logger.info("Usuário deslogado com sucesso!");
+
   }
 }
