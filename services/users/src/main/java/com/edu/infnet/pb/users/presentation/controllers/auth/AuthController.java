@@ -1,6 +1,10 @@
 package com.edu.infnet.pb.users.presentation.controllers.auth;
 
+import java.util.UUID;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +34,12 @@ public class AuthController {
   public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto body) {
     var result = service.login(body);
     return ResponseEntity.ok(result);
+  }
+
+  @PostMapping("/logout")
+  public void logout(@AuthenticationPrincipal Jwt jwt) {
+    UUID userId = UUID.fromString(jwt.getSubject());
+    service.Logout(userId);
   }
 
 }
