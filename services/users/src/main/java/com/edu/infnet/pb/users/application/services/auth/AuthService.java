@@ -1,7 +1,10 @@
 package com.edu.infnet.pb.users.application.services.auth;
 
 import java.time.Instant;
+import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,6 +21,7 @@ import com.edu.infnet.pb.users.presentation.dtos.auth.LoginRequestDto;
 import com.edu.infnet.pb.users.presentation.dtos.auth.LoginResponseDto;
 import com.edu.infnet.pb.users.presentation.dtos.auth.RegisterRequestDto;
 import com.edu.infnet.pb.users.presentation.dtos.auth.RegisterResponseDto;
+import com.edu.infnet.pb.users.shared.exceptions.ResourceNotFoundException;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,11 +33,18 @@ public class AuthService {
   private final BCryptPasswordEncoder bcrypt;
   private final JwtEncoder jwt;
 
-  @Transactional /* se algo falhar não cria o usuário "incompleto" */
+  private static final Logger logger = LogManager.getLogger(AuthService.class);
+
+  Instant NOW = Instant.now(); // criado agora
+  long ACESS_TOKEN_EXPIRES_IN = 300L; // expira em 5min
+  long REFRESH_TOKEN_EXPIRES_IN = 604800; // expira em 7 dias
+
+  @Transactional
   public RegisterResponseDto register(RegisterRequestDto registerRequest) {
     var userAlreadyExists = repo.findByEmail(registerRequest.email());
 
     if (userAlreadyExists.isPresent()) {
+      logger.error("Erro ao criar conta, usuário já existente");
       throw new ResponseStatusException(HttpStatus.CONFLICT);
     }
 
@@ -45,6 +56,7 @@ public class AuthService {
 
     var createdUser = repo.save(user);
 
+    logger.info("Usuário criado com sucesso!");
     return new RegisterResponseDto(
         createdUser.getName(),
         createdUser.getEmail(),
@@ -52,28 +64,58 @@ public class AuthService {
         null);
   }
 
+  @Transactional
   public LoginResponseDto login(LoginRequestDto loginRequest) {
-    var NOW = Instant.now();
-    var EXPIRES_IN = 300L;
 
     var user = repo.findByEmail(loginRequest.email());
 
     if (user.isEmpty()) {
+      logger.error("Erro ao fazer login, dados inválidos!");
       throw new BadCredentialsException("Dados inválidos!");
     }
 
     if (!user.get().ComparePassword(loginRequest.password(), bcrypt)) {
+      logger.error("Erro ao fazer login, dados inválidos!");
       throw new BadCredentialsException("Dados inválidos!");
     }
 
     var claims = JwtClaimsSet.builder()
         .issuer("users-service")
         .subject(user.get().getId().toString())
-        .issuedAt(NOW) // criado agora
-        .expiresAt(NOW.plusSeconds(EXPIRES_IN)).build(); // expira em 5min
+        .claim("name", user.get().getName())
+        .claim("role", user.get().getRoles())
+        .issuedAt(NOW)
+        .expiresAt(NOW.plusSeconds(ACESS_TOKEN_EXPIRES_IN)).build();
 
-    var jwtValue = jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    var accessToken = jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    var refreshToken = UUID.randomUUID().toString(); // !! talvez não seja a melhor prática
 
-    return new LoginResponseDto(jwtValue, null, EXPIRES_IN);
+    user.get().setRefreshToken(refreshToken);
+
+    logger.info("Usuário logado com sucesso!");
+    return new LoginResponseDto(accessToken, refreshToken, ACESS_TOKEN_EXPIRES_IN);
+  }
+
+  @Transactional
+  public void Logout(UUID userId) {
+    var userExists = repo.findById(userId);
+
+    if (userExists.isEmpty()) {
+      logger.error("Usuário não encontrado!");
+      throw new ResourceNotFoundException("usuário não encontrado!");
+    }
+
+    var user = userExists.get();
+    var refreshToken = user.getRefreshToken();
+
+    if (refreshToken == null || refreshToken.isBlank()) {
+      logger.error("RefreshToken não encontrado!");
+      throw new ResourceNotFoundException("refresh token não encontrado!");
+    }
+
+    user.setRefreshToken(null);
+    repo.save(user);
+
+    logger.info("Usuário deslogado com sucesso!");
   }
 }
