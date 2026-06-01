@@ -1,0 +1,9 @@
+$kind: http-request
+name: logout
+url: "{{usersUrl}}/auth/logout"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: ""
+order: 4079016925180691
