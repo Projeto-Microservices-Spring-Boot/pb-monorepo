@@ -1,8 +1,5 @@
 _format_version: "3.0"
 
-# TODO => separar as rotas públicas e privadas de cada microservice e adicionar plugin JWT onde necessário,
-# TODO => configurar o plugin de  rate limit onde necessário,
-
 services:
   - name: adm-dashboard-service
     url: http://adm-dashboard:8081
@@ -43,26 +40,22 @@ services:
   - name: users-service
     url: http://users:8082
     routes:
-      - name: users-public-routes
-        paths:
-          - /users/public # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
+      - name: users.public
+        paths: ["/users/public"]
+        protocols: [http]
+        strip_path: true
+
+      - name: users.private
+        paths: ["/users/"]
         protocols:
           - http
         strip_path: true
-
-      - name: users-private-routes
-        paths:
-          - /users/private # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
-        protocols:
-          - http
         plugins:
           - name: jwt
             config:
               header_names:
                 - authorization
-              claims_to_verify:
-                - exp
-                - nbf
+              claims_to_verify: [exp]
               key_claim_name: iss
 
   - name: stickers-service
@@ -86,11 +79,8 @@ services:
 consumers:
   - username: frontend
     jwt_secrets:
-      # IDE lança um erro 'Missing property "secret"' se não passar o 'secret' mas o kong funciona.
-      # Isso aparentemente é um bug da extensão YAML do VsCode, o mesmo acontece com o application.yaml.
-      # A IA do Kong disse que não é necessário usar o 'secret' quando o algorithm é 'RS256' mas ela disse que pode deixar.
-      - key: frontend-NextJs
-        secret: segredo-super-secreto
+      - key: frontend # iss do token JWT
+        secret: dummy-value
         algorithm: RS256
         rsa_public_key: |
           -----BEGIN PUBLIC KEY-----
