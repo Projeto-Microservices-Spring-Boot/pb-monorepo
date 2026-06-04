@@ -1,7 +1,5 @@
 $kind: http-request
 name: Health
-url: "{{gatewayUrl}}/users/actuator/health"
+url: "{{gatewayUrl}}/users/public/actuator/health"
 method: GET
-headers:
-  Accept: application/json
-order: 1000
+order: 1047614082518780
