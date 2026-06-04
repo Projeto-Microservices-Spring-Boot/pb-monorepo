@@ -36,13 +36,12 @@ public class SecurityConfig {
 
     http
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/actuator/**").permitAll() /* Autoriza os endpoints do Actuator sem necessitar de auth */
+            .requestMatchers("/actuator/**").permitAll() /* <- Rotas públicas */
             .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
             .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-            .anyRequest().authenticated() /* As outras rotas que não forem explicitamente públicas seão protegidas */
-        )
-        .httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable())
-        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+            .anyRequest().authenticated()) /* <- Rotas privadas */
+        .csrf(csrf -> csrf.disable())
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults())) /* Ativa validacao JWT nas requests */
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
     return http.build();
