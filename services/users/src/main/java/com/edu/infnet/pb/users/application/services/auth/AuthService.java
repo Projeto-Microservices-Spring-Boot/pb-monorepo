@@ -34,8 +34,7 @@ public class AuthService {
 
   private static final Logger logger = LogManager.getLogger(AuthService.class);
 
-  Instant NOW = Instant.now(); // criado agora
-  long ACESS_TOKEN_EXPIRES_IN = 300L; // expira em 5min
+  long ACCESS_TOKEN_EXPIRES_IN = 300L; // expira em 5min
   long REFRESH_TOKEN_EXPIRES_IN = 604800; // expira em 7 dias
 
   @Transactional
@@ -64,6 +63,7 @@ public class AuthService {
 
   @Transactional
   public LoginResponseDto login(LoginRequestDto loginRequest) {
+    Instant NOW = Instant.now(); // criado agora
 
     var user = repo.findByEmail(loginRequest.email());
 
@@ -78,12 +78,12 @@ public class AuthService {
     }
 
     var claims = JwtClaimsSet.builder()
-        .issuer("users-service")
+        .issuer("frontend")
         .subject(user.get().getId().toString())
         .claim("name", user.get().getName())
         .claim("role", user.get().getRoles())
         .issuedAt(NOW)
-        .expiresAt(NOW.plusSeconds(ACESS_TOKEN_EXPIRES_IN)).build();
+        .expiresAt(NOW.plusSeconds(ACCESS_TOKEN_EXPIRES_IN)).build();
 
     var accessToken = jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     var refreshToken = UUID.randomUUID().toString(); // !! talvez não seja a melhor prática
@@ -91,7 +91,7 @@ public class AuthService {
     user.get().setRefreshToken(refreshToken);
 
     logger.info("Usuário logado com sucesso!");
-    return new LoginResponseDto(accessToken, refreshToken, ACESS_TOKEN_EXPIRES_IN);
+    return new LoginResponseDto(accessToken, refreshToken, ACCESS_TOKEN_EXPIRES_IN);
   }
 
   @Transactional
