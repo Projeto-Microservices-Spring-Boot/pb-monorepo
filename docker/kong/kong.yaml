@@ -1,8 +1,5 @@
 _format_version: "3.0"
 
-# TODO => separar as rotas públicas e privadas de cada microservice e adicionar plugin JWT onde necessário,
-# TODO => configurar o plugin de  rate limit onde necessário,
-
 services:
   - name: adm-dashboard-service
     url: http://adm-dashboard:8081
@@ -43,26 +40,23 @@ services:
   - name: users-service
     url: http://users:8082
     routes:
-      - name: users-public-routes
-        paths:
-          - /users/public # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
+      - name: users.public
+        paths: ["/users/public"]
+        protocols: [http]
+        strip_path: true
+
+      - name: users.private
+        paths: ["/users/"]
         protocols:
           - http
         strip_path: true
-
-      - name: users-private-routes
-        paths:
-          - /users/private # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
-        protocols:
-          - http
         plugins:
           - name: jwt
             config:
               header_names:
                 - authorization
-              claims_to_verify:
-                - exp
-                - nbf
+              claims_to_verify: [exp]
+              key_claim_name: iss
 
   - name: stickers-service
     url: http://stickers:8087
@@ -85,9 +79,19 @@ services:
 consumers:
   - username: frontend
     jwt_secrets:
-      - key: my-frontend
-        secret: segredo-super-secreto # usar variável de ambiente
-        algorithm: HS256
+      - key: frontend # iss do token JWT
+        secret: dummy-value
+        algorithm: RS256
+        rsa_public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3Ga1oA1tdI+l62JKjqX9
+          1a6MMNykFCssfZjaWex5Zx5ndc+IqqieVpRHDkqfoNnNm8u96ENeC776iWZ3k6q1
+          WcI1qAyuzHYEWqoPJWKwBHAqGmqKCeSnRqzQZxcSNFX9U4nYCSJ0CZ4vq6TsNr07
+          pdjx4GFn3HOU1CDfd8s4J8tnSCwtKtU/gFYb0IPQoHLh6DaV4X/QYnTnHSuBcZPT
+          U6UWnQWqu1AbBF5UxfU93U2gR3uoy0pqUd8qQjW0Eh/uWz/HWtqFszZ1WD9mCe7L
+          WEMIcspZpTc0GHOMy0o0l4FRc7Q6zPq+5/llJgem9S74Hz8EBX7+GEJ9Jhvv8HiI
+          ewIDAQAB
+          -----END PUBLIC KEY-----
 
 plugins:
   - name: prometheus

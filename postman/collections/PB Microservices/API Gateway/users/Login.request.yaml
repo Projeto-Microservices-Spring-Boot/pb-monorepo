@@ -1,0 +1,14 @@
+$kind: http-request
+name: Login
+url: "{{gatewayUrl}}/users/public/auth/login"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"email\":\"kong@email.com\",\r
+
+    \    \"password\":\"123456678\"\r
+
+    }"
+order: 3000
