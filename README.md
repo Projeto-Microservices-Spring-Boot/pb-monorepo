@@ -176,8 +176,11 @@ As portas expostas são:
 **Pré-requisitos:** **Java 25** e **Docker & Docker Compose**
 
 ```bash
-# clone o repositório do projeto
+# Clone o repositório do projeto
 git clone https://github.com/Projeto-Microservices-Spring-Boot/pb-monorepo.git
+
+# Acessa pasta onde estão os arquivos relacionados ao Docker
+cd docker
 
 # Sobe tudo (infra + serviços + frontend)
 docker compose up --build
