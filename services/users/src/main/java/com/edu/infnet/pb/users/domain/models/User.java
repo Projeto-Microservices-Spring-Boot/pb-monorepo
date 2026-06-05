@@ -49,6 +49,9 @@ public class User {
   @Column(nullable = true)
   private String refreshToken;
 
+  @Column(name = "refresh_token_expires_in", nullable = true)
+  private Instant refreshTokenExpiresIn;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "timestamp with time zone default now()")
   private Instant createdAt;
