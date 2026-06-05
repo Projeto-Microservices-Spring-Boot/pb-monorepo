@@ -42,4 +42,8 @@ public class AuthController {
     service.Logout(userId);
   }
 
+  @PostMapping("/refresh")
+  public void refresh() {
+  }
+
 }
