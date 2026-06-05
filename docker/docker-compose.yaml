@@ -208,8 +208,8 @@ services:
   users:
     container_name: users-service
     build:
-      context: ../services/users/
-      dockerfile: Dockerfile
+      context: ../ # raiz do monorepo
+      dockerfile: services/users/Dockerfile
     ports:
       - "8082:8082"
     healthcheck:
