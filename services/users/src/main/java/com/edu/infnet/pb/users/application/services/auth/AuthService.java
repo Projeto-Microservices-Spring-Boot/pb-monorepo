@@ -2,7 +2,6 @@ package com.edu.infnet.pb.users.application.services.auth;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.UUID;
@@ -91,26 +90,16 @@ public class AuthService {
 
     var accessToken = jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
 
-    /* Criptografia do refreshToken */
-    var rawBytes = new byte[32];
-    new SecureRandom().nextBytes(rawBytes);
-    var rawRefreshToken = HexFormat.of().formatHex(rawBytes);
+    var rawRefreshToken = user.get().generateRefreshToken();
 
-    try {
-      var hashedRefreshToken = HexFormat.of()
-          .formatHex(MessageDigest.getInstance("SHA-256")
-              .digest(rawRefreshToken.getBytes()));
+    updateRefreshToken(user.get(), rawRefreshToken);
+    user.get().setRefreshTokenExpiresIn(NOW.plusSeconds(REFRESH_TOKEN_EXPIRES_IN));
 
-      user.get().setRefreshToken(hashedRefreshToken);
-      user.get().setRefreshTokenExpiresIn(NOW.plusSeconds(REFRESH_TOKEN_EXPIRES_IN));
+    repo.save(user.get());
 
-      repo.save(user.get());
+    logger.info("Usuário logado com sucesso!");
+    return new LoginResponseDto(accessToken, rawRefreshToken, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN);
 
-      logger.info("Usuário logado com sucesso!");
-      return new LoginResponseDto(accessToken, hashedRefreshToken, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN);
-    } catch (NoSuchAlgorithmException e) {
-      throw new BadRequestException(e.getMessage());
-    }
   }
 
   @Transactional
@@ -137,6 +126,47 @@ public class AuthService {
 
   }
 
-  public void refresh() {
+  private void updateRefreshToken(User user, String rawRefreshToken) {
+    try {
+      var hashedRefreshToken = HexFormat.of()
+          .formatHex(MessageDigest.getInstance("SHA-256")
+              .digest(rawRefreshToken.getBytes()));
+
+      user.setRefreshToken(hashedRefreshToken);
+      repo.save(user);
+    } catch (NoSuchAlgorithmException e) {
+      throw new BadRequestException(e.getMessage());
+    }
   }
+
+  // public LoginResponseDto refresh(String refreshToken, UUID userId) {
+  //   Instant NOW = Instant.now();
+
+  //   var userExists = repo.findById(userId);
+  //   if (!userExists.isPresent()) {
+  //     logger.error("Usuário não encontrado!");
+  //     throw new ResourceNotFoundException("usuário não encontrado!");
+  //   }
+
+  //   var user = userExists.get();
+
+  //   var claims = JwtClaimsSet.builder()
+  //       .issuer("frontend")
+  //       .subject(user.getId().toString())
+  //       .claim("name", user.getName())
+  //       .claim("role", user.getRoles())
+  //       .issuedAt(NOW)
+  //       .expiresAt(NOW.plusSeconds(ACCESS_TOKEN_EXPIRES_IN)).build();
+
+  //   var newAccessToken = jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+  //   var newRawRefreshToken = user.generateRefreshToken();
+
+  //   updateRefreshToken(user, refreshToken);
+  //   user.setRefreshTokenExpiresIn(NOW.plusSeconds(REFRESH_TOKEN_EXPIRES_IN));
+
+  //   logger.info("Tokens recriados com sucesso!");
+  //   repo.save(user);
+
+  //   return new LoginResponseDto(newAccessToken, newRawRefreshToken, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN);
+  // }
 }
