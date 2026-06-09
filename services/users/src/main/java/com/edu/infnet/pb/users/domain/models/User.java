@@ -1,6 +1,8 @@
 package com.edu.infnet.pb.users.domain.models;
 
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -64,4 +66,9 @@ public class User {
     return passwordEncoder.matches(password, this.password);
   }
 
+  public String generateRefreshToken() {
+    var rawBytes = new byte[32];
+    new SecureRandom().nextBytes(rawBytes);
+    return HexFormat.of().formatHex(rawBytes);
+  }
 }
