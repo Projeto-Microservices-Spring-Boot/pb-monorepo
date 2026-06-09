@@ -42,8 +42,11 @@ public class AuthController {
     service.Logout(userId);
   }
 
-  @PostMapping("/refresh")
-  public void refresh() {
-  }
-
+  // @PostMapping("/refresh")
+  // public ResponseEntity<LoginResponseDto> refresh(@AuthenticationPrincipal Jwt jwt,
+  //     @RequestParam() String refreshToken) {
+  //   UUID userId = UUID.fromString(jwt.getSubject());
+  //   var result = service.refresh(refreshToken, userId);
+  //   return ResponseEntity.ok(result);
+  // }
 }
