@@ -1,7 +1,7 @@
 import { Geist } from 'next/font/google';
 
-import { TanStackQueryProvider } from '@/infra/integrations/tanStack-query';
-import { NuqsProvider } from '@/infra/integrations/nuqs';
+import { TanStackQueryProvider } from '@/lib/tanStack-query';
+import { NuqsProvider } from '@/lib/nuqs';
 
 import type { Metadata } from 'next';
 
