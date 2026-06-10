@@ -105,6 +105,86 @@ services:
           - http
         strip_path: true
 
+  # ══════════════════════════════════════════════════════════════════════════════
+  # OpenAPI Specs (/v3/api-docs) — Rotas públicas sem plugins
+  #
+  # prefixo /docs/{service} sem nenhum plugin, mantendo a documentação acessível.
+  # ══════════════════════════════════════════════════════════════════════════════
+  - name: users-docs
+    url: http://users:8082
+    routes:
+      - name: users-docs-route
+        paths: ["/docs/users"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: adm-dashboard-docs
+    url: http://adm-dashboard:8081
+    routes:
+      - name: adm-dashboard-docs-route
+        paths: ["/docs/adm-dashboard"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: community-docs
+    url: http://community:8083
+    routes:
+      - name: community-docs-route
+        paths: ["/docs/community"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: geolocalization-docs
+    url: http://geolocalization:8084
+    routes:
+      - name: geolocalization-docs-route
+        paths: ["/docs/geolocalization"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: payments-docs
+    url: http://payments:8085
+    routes:
+      - name: payments-docs-route
+        paths: ["/docs/payments"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: stickers-docs
+    url: http://stickers:8087
+    routes:
+      - name: stickers-docs-route
+        paths: ["/docs/stickers"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: store-docs
+    url: http://store:8088
+    routes:
+      - name: store-docs-route
+        paths: ["/docs/store"]
+        strip_path: true
+        protocols:
+          - http
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # Swagger UI — Interface unificada de documentação
+  # ══════════════════════════════════════════════════════════════════════════════
+  - name: docs-ui
+    url: http://swagger-ui:8080
+    routes:
+      - name: docs-ui-route
+        paths: ["/docs"]
+        strip_path: true
+        protocols:
+          - http
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Consumers — Identidades para autenticação JWT
 # ══════════════════════════════════════════════════════════════════════════════
