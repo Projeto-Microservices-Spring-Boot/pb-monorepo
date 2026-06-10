@@ -176,6 +176,8 @@ services:
   swagger-ui:
     image: swaggerapi/swagger-ui:v5.18.3
     container_name: pb_swagger-ui
+    ports:
+      - "8089:8080" 
     environment:
       URLS: "[{\"url\":\"http://localhost:8000/docs/users/v3/api-docs\",\"name\":\"Users\"},{\"url\":\"http://localhost:8000/docs/adm-dashboard/v3/api-docs\",\"name\":\"Adm Dashboard\"},{\"url\":\"http://localhost:8000/docs/community/v3/api-docs\",\"name\":\"Community\"},{\"url\":\"http://localhost:8000/docs/geolocalization/v3/api-docs\",\"name\":\"Geolocalization\"},{\"url\":\"http://localhost:8000/docs/payments/v3/api-docs\",\"name\":\"Payments\"},{\"url\":\"http://localhost:8000/docs/stickers/v3/api-docs\",\"name\":\"Stickers\"},{\"url\":\"http://localhost:8000/docs/store/v3/api-docs\",\"name\":\"Store\"}]"
       QUERY_CONFIG_ENABLED: "true"
