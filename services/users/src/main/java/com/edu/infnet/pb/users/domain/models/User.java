@@ -1,6 +1,8 @@
 package com.edu.infnet.pb.users.domain.models;
 
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -49,6 +51,9 @@ public class User {
   @Column(nullable = true)
   private String refreshToken;
 
+  @Column(name = "refresh_token_expires_in", nullable = true)
+  private Instant refreshTokenExpiresIn;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "timestamp with time zone default now()")
   private Instant createdAt;
@@ -61,4 +66,9 @@ public class User {
     return passwordEncoder.matches(password, this.password);
   }
 
+  public String generateRefreshToken() {
+    var rawBytes = new byte[32];
+    new SecureRandom().nextBytes(rawBytes);
+    return HexFormat.of().formatHex(rawBytes);
+  }
 }

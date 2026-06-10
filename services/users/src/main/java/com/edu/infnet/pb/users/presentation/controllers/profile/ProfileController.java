@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.edu.infnet.pb.users.application.services.profile.ProfileService;
+import com.edu.infnet.pb.users.docs.ProfileControllerDocs;
 import com.edu.infnet.pb.users.presentation.dtos.auth.ProfileResponseDto;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-public class ProfileController {
+public class ProfileController implements ProfileControllerDocs {
   private final ProfileService service;
   private static final Logger log = LogManager.getLogger(ProfileController.class);
 

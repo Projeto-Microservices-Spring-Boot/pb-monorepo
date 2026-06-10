@@ -1,6 +1,9 @@
 package com.edu.infnet.pb.users.application.services.auth;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -63,7 +66,7 @@ public class AuthService {
 
   @Transactional
   public LoginResponseDto login(LoginRequestDto loginRequest) {
-    Instant NOW = Instant.now(); // criado agora
+    Instant NOW = Instant.now();
 
     var user = repo.findByEmail(loginRequest.email());
 
@@ -86,12 +89,17 @@ public class AuthService {
         .expiresAt(NOW.plusSeconds(ACCESS_TOKEN_EXPIRES_IN)).build();
 
     var accessToken = jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-    var refreshToken = UUID.randomUUID().toString(); // !! talvez não seja a melhor prática
 
-    user.get().setRefreshToken(refreshToken);
+    var rawRefreshToken = user.get().generateRefreshToken();
+
+    updateRefreshToken(user.get(), rawRefreshToken);
+    user.get().setRefreshTokenExpiresIn(NOW.plusSeconds(REFRESH_TOKEN_EXPIRES_IN));
+
+    repo.save(user.get());
 
     logger.info("Usuário logado com sucesso!");
-    return new LoginResponseDto(accessToken, refreshToken, ACCESS_TOKEN_EXPIRES_IN);
+    return new LoginResponseDto(accessToken, rawRefreshToken, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN);
+
   }
 
   @Transactional
@@ -117,4 +125,48 @@ public class AuthService {
     logger.info("Usuário deslogado com sucesso!");
 
   }
+
+  private void updateRefreshToken(User user, String rawRefreshToken) {
+    try {
+      var hashedRefreshToken = HexFormat.of()
+          .formatHex(MessageDigest.getInstance("SHA-256")
+              .digest(rawRefreshToken.getBytes()));
+
+      user.setRefreshToken(hashedRefreshToken);
+      repo.save(user);
+    } catch (NoSuchAlgorithmException e) {
+      throw new BadRequestException(e.getMessage());
+    }
+  }
+
+  // public LoginResponseDto refresh(String refreshToken, UUID userId) {
+  //   Instant NOW = Instant.now();
+
+  //   var userExists = repo.findById(userId);
+  //   if (!userExists.isPresent()) {
+  //     logger.error("Usuário não encontrado!");
+  //     throw new ResourceNotFoundException("usuário não encontrado!");
+  //   }
+
+  //   var user = userExists.get();
+
+  //   var claims = JwtClaimsSet.builder()
+  //       .issuer("frontend")
+  //       .subject(user.getId().toString())
+  //       .claim("name", user.getName())
+  //       .claim("role", user.getRoles())
+  //       .issuedAt(NOW)
+  //       .expiresAt(NOW.plusSeconds(ACCESS_TOKEN_EXPIRES_IN)).build();
+
+  //   var newAccessToken = jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+  //   var newRawRefreshToken = user.generateRefreshToken();
+
+  //   updateRefreshToken(user, refreshToken);
+  //   user.setRefreshTokenExpiresIn(NOW.plusSeconds(REFRESH_TOKEN_EXPIRES_IN));
+
+  //   logger.info("Tokens recriados com sucesso!");
+  //   repo.save(user);
+
+  //   return new LoginResponseDto(newAccessToken, newRawRefreshToken, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN);
+  // }
 }
