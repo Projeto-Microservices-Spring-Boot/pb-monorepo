@@ -1,5 +1,9 @@
 package com.edu.infnet.pb.users.presentation.dtos.auth;
 
-public record LoginRequestDto(String email, String password) {
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record LoginRequestDto(
+    @Schema(example = "joao@email.com") String email,
+    @Schema(example = "123456") String password) {
 
 }

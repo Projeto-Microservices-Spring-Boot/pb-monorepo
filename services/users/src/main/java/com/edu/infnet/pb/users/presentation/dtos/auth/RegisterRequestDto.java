@@ -1,5 +1,10 @@
 package com.edu.infnet.pb.users.presentation.dtos.auth;
 
-public record RegisterRequestDto(String name, String email, String password) {
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record RegisterRequestDto(
+    @Schema(example = "João Silva") String name,
+    @Schema(example = "joao@email.com") String email,
+    @Schema(example = "123456") String password) {
 
 }

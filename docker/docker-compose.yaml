@@ -22,7 +22,6 @@ services:
       POSTGRES_EXTRA_DATABASES: "store, community, users, payments, geolocalization, stickers, adm_dashboard"
     volumes:
       - pg_data:/var/lib/postgresql
-
       - ./postgres:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     healthcheck:
@@ -172,6 +171,28 @@ services:
       COLLECTOR_OTLP_ENABLED: true
 
   # ---------------------------------------------------------------------------
+  # Swagger UI — Documentação centralizada dos microservices
+  # ---------------------------------------------------------------------------
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.18.3
+    container_name: pb_swagger-ui
+    ports:
+      - "8089:8080" 
+    environment:
+      URLS: "[{\"url\":\"http://localhost:8000/docs/users/v3/api-docs\",\"name\":\"Users\"},{\"url\":\"http://localhost:8000/docs/adm-dashboard/v3/api-docs\",\"name\":\"Adm Dashboard\"},{\"url\":\"http://localhost:8000/docs/community/v3/api-docs\",\"name\":\"Community\"},{\"url\":\"http://localhost:8000/docs/geolocalization/v3/api-docs\",\"name\":\"Geolocalization\"},{\"url\":\"http://localhost:8000/docs/payments/v3/api-docs\",\"name\":\"Payments\"},{\"url\":\"http://localhost:8000/docs/stickers/v3/api-docs\",\"name\":\"Stickers\"},{\"url\":\"http://localhost:8000/docs/store/v3/api-docs\",\"name\":\"Store\"}]"
+      QUERY_CONFIG_ENABLED: "true"
+      PERSIST_AUTHORIZATION: "true"
+      DISPLAY_REQUEST_DURATION: "true"
+    depends_on:
+      kong:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
   # Microservices + Eureka Server
   # ---------------------------------------------------------------------------
 
@@ -209,8 +230,8 @@ services:
   users:
     container_name: users-service
     build:
-      context: ../services/users/
-      dockerfile: Dockerfile
+      context: ../ # raiz do monorepo
+      dockerfile: services/users/Dockerfile
     ports:
       - "8082:8082"
     healthcheck:
