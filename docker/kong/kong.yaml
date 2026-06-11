@@ -11,7 +11,7 @@ services:
   - name: adm-dashboard-service
     url: http://adm-dashboard:8081
     routes:
-      - name: adm-dashboard-routes
+      - name: adm-dashboard
         paths: ["/adm-dashboard"]
         protocols:
           - http
@@ -20,13 +20,13 @@ services:
   - name: community-service
     url: http://community:8083
     routes:
-      - name: community-routes
+      - name: community
         paths: ["/community"]
         protocols:
           - http
         strip_path: true
 
-  - name: geolocalization-service
+  - name: geolocalization
     url: http://geolocalization:8084
     routes:
       - name: geolocalization-routes
@@ -38,18 +38,21 @@ services:
   - name: payments-service
     url: http://payments:8085
     routes:
-      - name: payments-routes
+      - name: payments
         paths: ["/payments"]
         protocols:
           - http
-        strip_path: true
+        strip_path: false
 
   - name: users-service
     url: http://users:8082
     routes:
       - name: users.public
-        paths: ["/users/public/"]
-        strip_path: true
+        paths:
+          - /auth/register
+          - /auth/login
+          - /actuator/health
+        strip_path: false
         protocols:
           - http
           - https
@@ -65,7 +68,9 @@ services:
             enabled: true
 
       - name: users.private
-        paths: ["/users/"]
+        paths:
+          - /auth/logout
+          - /me
         strip_path: true
         protocols:
           - http
@@ -90,7 +95,7 @@ services:
   - name: stickers-service
     url: http://stickers:8087
     routes:
-      - name: stickers-routes
+      - name: stickers
         paths: ["/stickers"]
         protocols:
           - http
@@ -99,7 +104,7 @@ services:
   - name: store-service
     url: http://store:8088
     routes:
-      - name: store-routes
+      - name: store
         paths: ["/store"]
         protocols:
           - http
@@ -113,7 +118,7 @@ services:
   - name: users-docs
     url: http://users:8082
     routes:
-      - name: users-docs-route
+      - name: users-docs
         paths: ["/docs/users"]
         strip_path: true
         protocols:
@@ -122,7 +127,7 @@ services:
   - name: adm-dashboard-docs
     url: http://adm-dashboard:8081
     routes:
-      - name: adm-dashboard-docs-route
+      - name: adm-dashboard-docs
         paths: ["/docs/adm-dashboard"]
         strip_path: true
         protocols:
@@ -131,7 +136,7 @@ services:
   - name: community-docs
     url: http://community:8083
     routes:
-      - name: community-docs-route
+      - name: community-docs
         paths: ["/docs/community"]
         strip_path: true
         protocols:
@@ -140,7 +145,7 @@ services:
   - name: geolocalization-docs
     url: http://geolocalization:8084
     routes:
-      - name: geolocalization-docs-route
+      - name: geolocalization-docs
         paths: ["/docs/geolocalization"]
         strip_path: true
         protocols:
@@ -149,7 +154,7 @@ services:
   - name: payments-docs
     url: http://payments:8085
     routes:
-      - name: payments-docs-route
+      - name: payments-docs
         paths: ["/docs/payments"]
         strip_path: true
         protocols:
@@ -158,7 +163,7 @@ services:
   - name: stickers-docs
     url: http://stickers:8087
     routes:
-      - name: stickers-docs-route
+      - name: stickers-docs
         paths: ["/docs/stickers"]
         strip_path: true
         protocols:
@@ -167,7 +172,7 @@ services:
   - name: store-docs
     url: http://store:8088
     routes:
-      - name: store-docs-route
+      - name: store-docs
         paths: ["/docs/store"]
         strip_path: true
         protocols:
@@ -179,7 +184,7 @@ services:
   - name: docs-ui
     url: http://swagger-ui:8080
     routes:
-      - name: docs-ui-route
+      - name: docs-ui
         paths: ["/docs"]
         strip_path: true
         protocols:
