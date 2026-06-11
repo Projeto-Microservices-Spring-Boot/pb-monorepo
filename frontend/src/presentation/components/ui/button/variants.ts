@@ -1,9 +1,6 @@
-import { type ButtonHTMLAttributes } from 'react';
 import { tv, type VariantProps } from 'tailwind-variants';
 
-import { cn } from '@/utils/utils';
-
-const buttonVariants = tv({
+export const buttonVariants = tv({
   base: 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   variants: {
     variant: {
@@ -28,18 +25,4 @@ const buttonVariants = tv({
   },
 });
 
-interface ButtonProps
-  extends
-    ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
-
-export function Button({ className, variant, size, ...props }: ButtonProps) {
-  return (
-    <button
-      className={cn(buttonVariants({ variant, size }), className)}
-      {...props}
-    />
-  );
-}
-
-export { buttonVariants };
+export type ButtonVariantProps = VariantProps<typeof buttonVariants>;
