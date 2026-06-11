@@ -1,7 +1,9 @@
 import Link from 'next/link';
 
-import { Button } from '@/presentation/components/ui/button';
-import { Input } from '@/presentation/components/ui/input';
+import { Button } from '@/presentation/components/ui/button/button';
+import { Input } from '@/presentation/components/ui/input/input';
+
+import { useRegisterFormModel } from './register-form.model';
 
 const texts = {
   form: {
@@ -21,9 +23,14 @@ const texts = {
       label: 'Senha',
       placeholder: 'Crie uma senha segura',
     },
+    confirmPassword: {
+      label: 'Confirmar senha',
+      placeholder: 'Confirme sua senha',
+    },
   },
   button: {
     title: 'Cadastrar',
+    isPending: 'Cadastrando...',
   },
   paragraphs: {
     alreadyHaveAccount: 'Já tem uma conta?',
@@ -31,37 +38,59 @@ const texts = {
   },
 };
 
-export function RegisterForm() {
+type RegisterFormViewProps = ReturnType<typeof useRegisterFormModel>;
+
+export const RegisterFormView = ({
+  register,
+  errors,
+  onSubmit,
+  isPending,
+}: RegisterFormViewProps) => {
   return (
-    <form className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-5">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-gray-900">{texts.form.title}</h1>
         <p className="text-sm text-gray-500">{texts.form.subtitle}</p>
       </div>
 
       <Input
+        {...register('name')}
         label={texts.inputs.name.label}
-        type="text"
         placeholder={texts.inputs.name.placeholder}
+        error={errors.name?.message}
+        type="text"
         autoComplete="name"
       />
 
       <Input
+        {...register('email')}
         label={texts.inputs.email.label}
-        type="email"
         placeholder={texts.inputs.email.placeholder}
+        error={errors.email?.message}
+        type="email"
         autoComplete="email"
       />
 
       <Input
+        {...register('password')}
         label={texts.inputs.password.label}
-        type="password"
         placeholder={texts.inputs.password.placeholder}
+        error={errors.password?.message}
+        type="password"
         autoComplete="new-password"
       />
 
-      <Button type="submit" className="w-full" size="lg">
-        {texts.button.title}
+      <Input
+        {...register('confirmPassword')}
+        label={texts.inputs.confirmPassword.label}
+        placeholder={texts.inputs.confirmPassword.placeholder}
+        error={errors.confirmPassword?.message}
+        type="password"
+        autoComplete="new-password"
+      />
+
+      <Button type="submit" className="w-full" size="lg" disabled={isPending}>
+        {isPending ? texts.button.isPending : texts.button.title}
       </Button>
 
       <p className="text-center text-sm text-gray-500">
@@ -75,4 +104,4 @@ export function RegisterForm() {
       </p>
     </form>
   );
-}
+};
