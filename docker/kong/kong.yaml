@@ -1,8 +1,12 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  Kong API Gateway — Declarative Configuration (DB-less mode)                 ║
+# ║  Proxy: http://localhost:8000 | Admin: http://localhost:8001                 ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
 _format_version: "3.0"
 
-# TODO => separar as rotas públicas e privadas de cada microservice e adicionar plugin JWT onde necessário,
-# TODO => configurar o plugin de  rate limit onde necessário,
-
+# ══════════════════════════════════════════════════════════════════════════════
+# Services
+# ══════════════════════════════════════════════════════════════════════════════
 services:
   - name: adm-dashboard-service
     url: http://adm-dashboard:8081
@@ -43,27 +47,45 @@ services:
   - name: users-service
     url: http://users:8082
     routes:
-      - name: users-public-routes
-        paths:
-          - /users/public # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
-        protocols:
-          - http
+      - name: users.public
+        paths: ["/users/public/"]
         strip_path: true
-
-      - name: users-private-routes
-        paths:
-          - /users/private # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
         protocols:
           - http
+          - https
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 2 # ⏱️ Máx. 2 requests por segundo
+              minute: 15 # Máx. 15 por minuto
+              hour: 50 # 🕐 Máx. 100 por hora
+              policy: local # Contadores em memória local de cada nó
+              limit_by: ip # Limita pelo IP do cliente
+              hide_client_headers: true # Oculta headers X-RateLimit-*
+            enabled: true
+
+      - name: users.private
+        paths: ["/users/"]
+        strip_path: true
+        protocols:
+          - http
+          - https
         plugins:
           - name: jwt
             config:
               header_names:
-                - authorization
-              claims_to_verify:
-                - exp
-                - nbf
-              key_claim_name: iss
+                - authorization # Lê o token do header Authorization
+              claims_to_verify: [exp] # Verifica se o token não está expirado
+              key_claim_name: iss # Usa o campo "iss" do token para identificar o consumer
+
+          - name: rate-limiting
+            config:
+              second: 5 # ⏱️ Máx. 5 requests por segundo
+              minute: 50 # Máx. 50 por minuto
+              hour: 150 # 🕐 Máx. 150 por hora
+              policy: local # Contadores em memória local de cada nó
+              limit_by: consumer # Limita pelo consumer (rotas com auth)
+            enabled: true
 
   - name: stickers-service
     url: http://stickers:8087
@@ -83,14 +105,94 @@ services:
           - http
         strip_path: true
 
+  # ══════════════════════════════════════════════════════════════════════════════
+  # OpenAPI Specs (/v3/api-docs) — Rotas públicas sem plugins
+  #
+  # prefixo /docs/{service} sem nenhum plugin, mantendo a documentação acessível.
+  # ══════════════════════════════════════════════════════════════════════════════
+  - name: users-docs
+    url: http://users:8082
+    routes:
+      - name: users-docs-route
+        paths: ["/docs/users"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: adm-dashboard-docs
+    url: http://adm-dashboard:8081
+    routes:
+      - name: adm-dashboard-docs-route
+        paths: ["/docs/adm-dashboard"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: community-docs
+    url: http://community:8083
+    routes:
+      - name: community-docs-route
+        paths: ["/docs/community"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: geolocalization-docs
+    url: http://geolocalization:8084
+    routes:
+      - name: geolocalization-docs-route
+        paths: ["/docs/geolocalization"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: payments-docs
+    url: http://payments:8085
+    routes:
+      - name: payments-docs-route
+        paths: ["/docs/payments"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: stickers-docs
+    url: http://stickers:8087
+    routes:
+      - name: stickers-docs-route
+        paths: ["/docs/stickers"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: store-docs
+    url: http://store:8088
+    routes:
+      - name: store-docs-route
+        paths: ["/docs/store"]
+        strip_path: true
+        protocols:
+          - http
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # Swagger UI — Interface unificada de documentação
+  # ══════════════════════════════════════════════════════════════════════════════
+  - name: docs-ui
+    url: http://swagger-ui:8080
+    routes:
+      - name: docs-ui-route
+        paths: ["/docs"]
+        strip_path: true
+        protocols:
+          - http
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Consumers — Identidades para autenticação JWT
+# ══════════════════════════════════════════════════════════════════════════════
 consumers:
   - username: frontend
     jwt_secrets:
-      # IDE lança um erro 'Missing property "secret"' se não passar o 'secret' mas o kong funciona.
-      # Isso aparentemente é um bug da extensão YAML do VsCode, o mesmo acontece com o application.yaml.
-      # A IA do Kong disse que não é necessário usar o 'secret' quando o algorithm é 'RS256' mas ela disse que pode deixar.
-      - key: frontend-NextJs
-        secret: segredo-super-secreto
+      - key: frontend # Deve corresponder ao valor do campo "iss" no token JWT
+        secret: dummy-value
         algorithm: RS256
         rsa_public_key: |
           -----BEGIN PUBLIC KEY-----
@@ -103,6 +205,9 @@ consumers:
           ewIDAQAB
           -----END PUBLIC KEY-----
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Global Plugins — Aplicados a TODAS as rotas
+# ══════════════════════════════════════════════════════════════════════════════
 plugins:
   - name: prometheus
     config:
@@ -116,5 +221,17 @@ plugins:
     config:
       origins:
         - "http://localhost:3000" # frontend (dev)
-      methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
-      headers: [Accept, Content-Type, Authorization]
+      credentials: true # Necessário para header Authorization funcionar no browser
+      max_age: 3600 # Cache do preflight por 1 hora
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Content-Type
+        - Authorization
+        - X-Request-Id

@@ -16,4 +16,6 @@ public interface AuthRepository extends JpaRepository<User, UUID> {
   Optional<User> findByName(String name);
 
   Optional<User> findRoleByName(Roles role);
+
+  Optional<User> findByRefreshToken(String refreshToken);
 }
