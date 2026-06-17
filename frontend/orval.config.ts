@@ -4,15 +4,12 @@ const USERS_SERVICE_BASE_URL = 'http://localhost:8000/docs/users/v3/api-docs';
 
 export default defineConfig({
   users: {
-    input: USERS_SERVICE_BASE_URL, 
+    input: USERS_SERVICE_BASE_URL,
     output: {
       namingConvention: 'kebab-case',
       mode: 'tags-split',
       target: 'src/api/generated/users/endpoints',
-      schemas: {
-        path: 'src/api/generated/users/models',
-        type: 'typescript',
-      },
+      schemas: 'src/api/generated/users/models',
       operationSchemas: 'src/api/generated/users/models/params',
       client: 'react-query',
       httpClient: 'axios',
