@@ -12,47 +12,73 @@ services:
     url: http://adm-dashboard:8081
     routes:
       - name: adm-dashboard
-        paths: ["/adm-dashboard"]
+        paths:
+          - /adm
+        strip_path: true
         protocols:
           - http
+
+      - name: adm-dashboard-docs
+        paths: ["/docs/adm-dashboard"]
         strip_path: true
+        protocols:
+          - http
 
   - name: community-service
     url: http://community:8083
     routes:
       - name: community
-        paths: ["/community"]
+        paths:
+          - /community
+        strip_path: true
         protocols:
           - http
+
+      - name: community-docs
+        paths: ["/docs/community"]
         strip_path: true
+        protocols:
+          - http
 
   - name: geolocalization
     url: http://geolocalization:8084
     routes:
       - name: geolocalization-routes
-        paths: ["/geolocalization"]
+        paths:
+          - /geolocalization
+        strip_path: true
         protocols:
           - http
+
+      - name: geolocalization-docs
+        paths: ["/docs/geolocalization"]
         strip_path: true
+        protocols:
+          - http
 
   - name: payments-service
     url: http://payments:8085
     routes:
       - name: payments
-        paths: ["/payments"]
+        paths:
+          - /payments
+        strip_path: true
         protocols:
           - http
-        strip_path: false
+
+      - name: payments-docs
+        paths: ["/docs/payments"]
+        strip_path: true
+        protocols:
+          - http
 
   - name: users-service
     url: http://users:8082
     routes:
       - name: users.public
         paths:
-          - /auth/register
-          - /auth/login
-          - /actuator/health
-        strip_path: false
+          - /users
+        strip_path: true
         protocols:
           - http
           - https
@@ -92,86 +118,38 @@ services:
               limit_by: consumer # Limita pelo consumer (rotas com auth)
             enabled: true
 
-  - name: stickers-service
-    url: http://stickers:8087
-    routes:
-      - name: stickers
-        paths: ["/stickers"]
-        protocols:
-          - http
-        strip_path: true
-
-  - name: store-service
-    url: http://store:8088
-    routes:
-      - name: store
-        paths: ["/store"]
-        protocols:
-          - http
-        strip_path: true
-
-  # ══════════════════════════════════════════════════════════════════════════════
-  # OpenAPI Specs (/v3/api-docs) — Rotas públicas sem plugins
-  #
-  # prefixo /docs/{service} sem nenhum plugin, mantendo a documentação acessível.
-  # ══════════════════════════════════════════════════════════════════════════════
-  - name: users-docs
-    url: http://users:8082
-    routes:
       - name: users-docs
         paths: ["/docs/users"]
         strip_path: true
         protocols:
           - http
 
-  - name: adm-dashboard-docs
-    url: http://adm-dashboard:8081
-    routes:
-      - name: adm-dashboard-docs
-        paths: ["/docs/adm-dashboard"]
-        strip_path: true
-        protocols:
-          - http
-
-  - name: community-docs
-    url: http://community:8083
-    routes:
-      - name: community-docs
-        paths: ["/docs/community"]
-        strip_path: true
-        protocols:
-          - http
-
-  - name: geolocalization-docs
-    url: http://geolocalization:8084
-    routes:
-      - name: geolocalization-docs
-        paths: ["/docs/geolocalization"]
-        strip_path: true
-        protocols:
-          - http
-
-  - name: payments-docs
-    url: http://payments:8085
-    routes:
-      - name: payments-docs
-        paths: ["/docs/payments"]
-        strip_path: true
-        protocols:
-          - http
-
-  - name: stickers-docs
+  - name: stickers-service
     url: http://stickers:8087
     routes:
+      - name: stickers
+        paths:
+          - /stickers
+        strip_path: true
+        protocols:
+          - http
+
       - name: stickers-docs
         paths: ["/docs/stickers"]
         strip_path: true
         protocols:
           - http
 
-  - name: store-docs
+  - name: store-service
     url: http://store:8088
     routes:
+      - name: store
+        paths:
+          - /store
+        strip_path: true
+        protocols:
+          - http
+
       - name: store-docs
         paths: ["/docs/store"]
         strip_path: true
