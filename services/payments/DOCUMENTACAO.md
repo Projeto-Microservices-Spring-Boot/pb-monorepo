@@ -1,7 +1,7 @@
 # Documentação Técnica — Microsserviço `payments`
 
 > Documento de referência para estudo, manutenção e onboarding.
-> Baseado no código efetivamente implementado em junho de 2026.
+> Baseado no código efetivamente implementado em junho de 2026 — inclui processamento de pagamento (simulação determinística) e integração com Kafka.
 
 ---
 
@@ -55,7 +55,7 @@ Banco de dados payments (PostgreSQL)
 | Aspecto | `users` | `payments` |
 |---|---|---|
 | Papel no JWT | Emissor (assina com chave privada) | Validador (verifica com chave pública) |
-| Chave RSA utilizada | `app.key` (privada) + `app.key.pub` (pública) | `app.key.pub` (pública apenas) |
+| Chave RSA utilizada | `app.key` (privada) + `app.key.pub` (pública) | `app.key.pub` via módulo `shared` |
 | Porta | 8082 | 8085 |
 | Banco de dados | `users` | `payments` |
 
@@ -69,8 +69,8 @@ O `users` emite um token JWT quando o usuário faz login. Esse token contém o U
 3. JWT contém: sub = UUID do usuário, exp = +5 minutos, issuer = "users-service"
 4. Frontend armazena o token e o envia em todas as requisições ao payments:
    Header: Authorization: Bearer <token>
-5. payments intercepta a requisição via Spring Security
-6. JwtDecoder verifica a assinatura do token usando app.key.pub
+5. payments intercepta a requisição via Spring Security (SecurityConfig do shared)
+6. JwtDecoder verifica a assinatura do token usando app.key.pub (do shared)
 7. Se válido: extrai sub → UUID do usuário → processa a operação
 8. Se inválido ou expirado: retorna 401 automaticamente
 ```
@@ -78,6 +78,18 @@ O `users` emite um token JWT quando o usuário faz login. Esse token contém o U
 ---
 
 ## 2. Arquitetura
+
+### Módulo `shared`
+
+O `payments` depende do módulo `shared` (`services/shared/`), que é um JAR Maven instalado localmente durante o build. O `shared` fornece os componentes de segurança reutilizados por todos os microserviços:
+
+- **`SecurityConfig.java`** (`com.edu.infnet.pb.config`) — define o `SecurityFilterChain`, o `JwtDecoder` (verifica tokens) e o `JwtEncoder` (assina tokens, usado apenas pelo `users`)
+- **`app.key.pub`** (`src/main/resources/`) — chave pública RSA usada para verificar tokens JWT emitidos pelo `users`
+- **`app.key`** (`src/main/resources/`) — chave privada RSA, necessária porque o `SecurityConfig` do `shared` declara um bean `JwtEncoder` compartilhado por todos os serviços, mesmo que o `payments` nunca o utilize
+
+O `PaymentsApplication` usa `scanBasePackages = "com.edu.infnet.pb"`, que inclui o pacote do `shared`, fazendo o Spring carregar automaticamente o `SecurityConfig` de lá.
+
+**Importante:** diferente de versões anteriores deste documento, o `SecurityConfig` do `shared` **não tem mais valor default** para `jwt.public.key` e `jwt.private.key`. O `payments/application.yaml` precisa declarar explicitamente os dois caminhos `classpath:`, mesmo não usando o `JwtEncoder`.
 
 ### Estrutura de pastas
 
@@ -88,12 +100,14 @@ services/payments/
 │   │   ├── java/com/edu/infnet/pb/payments/
 │   │   │   ├── PaymentsApplication.java       ← ponto de entrada
 │   │   │   ├── config/
-│   │   │   │   └── SecurityConfig.java        ← configuração de segurança JWT
+│   │   │   │   ├── OpenAPIConfig.java         ← configuração do Swagger/OpenAPI
+│   │   │   │   └── KafkaConfig.java           ← declara os tópicos Kafka (NewTopic beans)
 │   │   │   ├── controller/
 │   │   │   │   └── PaymentController.java     ← endpoints REST
 │   │   │   ├── dto/
 │   │   │   │   ├── PaymentRequest.java        ← dados de entrada da API
-│   │   │   │   └── PaymentResponse.java       ← dados de saída da API
+│   │   │   │   ├── PaymentResponse.java       ← dados de saída da API
+│   │   │   │   └── PaymentEvent.java          ← payload publicado no Kafka
 │   │   │   ├── entity/
 │   │   │   │   └── Payment.java               ← entidade JPA (tabela payments)
 │   │   │   ├── enums/
@@ -101,12 +115,13 @@ services/payments/
 │   │   │   │   └── PaymentStatus.java         ← estados possíveis de um pagamento
 │   │   │   ├── exception/
 │   │   │   │   └── GlobalExceptionHandler.java ← tratamento centralizado de erros
+│   │   │   ├── producer/
+│   │   │   │   └── PaymentProducer.java       ← publica eventos no Kafka
 │   │   │   ├── repository/
 │   │   │   │   └── PaymentRepository.java     ← acesso ao banco de dados
 │   │   │   └── service/
-│   │   │       └── PaymentService.java        ← regras de negócio
+│   │   │       └── PaymentService.java        ← regras de negócio + processamento + disparo de eventos
 │   │   └── resources/
-│   │       ├── app.key.pub                    ← chave pública RSA (valida JWT)
 │   │       └── application.yaml              ← configurações da aplicação
 │   └── test/
 │       └── java/com/edu/infnet/pb/payments/
@@ -115,6 +130,8 @@ services/payments/
 ├── pom.xml                                    ← dependências Maven
 └── mvnw                                       ← Maven wrapper
 ```
+
+> `SecurityConfig.java` e `app.key.pub` não existem neste módulo — são fornecidos pelo `shared`.
 
 ### Responsabilidade de cada camada
 
@@ -126,7 +143,7 @@ services/payments/
 | **Entity** | `entity/` | Representar a tabela `payments` no banco — nunca exposta diretamente na API |
 | **DTO** | `dto/` | Contratos de entrada (Request) e saída (Response) da API |
 | **Enums** | `enums/` | Valores válidos para status e método de pagamento |
-| **Config** | `config/` | Configurações de infraestrutura (segurança, beans do Spring) |
+| **Config** | `config/` | Configuração do Swagger/OpenAPI (segurança vem do `shared`) |
 | **Exception** | `exception/` | Interceptar e formatar erros de forma padronizada |
 
 ### Fluxo completo de uma requisição
@@ -137,10 +154,10 @@ Cliente (Postman / Frontend)
   │  Authorization: Bearer <jwt>
   │  POST /payments  { amount: 100.00, method: "PIX" }
   ▼
-Spring Security Filter Chain  (SecurityConfig)
+Spring Security Filter Chain  (SecurityConfig do shared)
   │  1. Intercepta a requisição
   │  2. Extrai o token do header Authorization
-  │  3. JwtDecoder verifica assinatura com app.key.pub
+  │  3. JwtDecoder verifica assinatura com app.key.pub (do shared)
   │  4. Se inválido → 401 (nunca chega ao controller)
   │  5. Se válido → injeta o Jwt no SecurityContext
   ▼
@@ -177,7 +194,7 @@ Cliente recebe resposta JSON
 
 **Responsabilidade:** Ponto de entrada da aplicação Spring Boot. Contém o método `main` que inicializa o contexto do Spring, sobe o servidor Tomcat embarcado e registra o serviço no Eureka.
 
-**Por que existe:** Todo projeto Spring Boot precisa de exatamente uma classe anotada com `@SpringBootApplication`. Ela dispara o component scan a partir do pacote `com.edu.infnet.pb.payments`, encontrando automaticamente todos os `@Service`, `@Repository`, `@RestController` e `@Configuration` do projeto.
+**Por que existe:** Todo projeto Spring Boot precisa de exatamente uma classe anotada com `@SpringBootApplication`. A anotação usa `scanBasePackages = "com.edu.infnet.pb"` — pacote raiz que inclui tanto o pacote `payments` quanto o pacote `shared`. Isso faz o Spring encontrar automaticamente o `SecurityConfig` do módulo `shared`, além de todos os `@Service`, `@Repository`, `@RestController` e `@Configuration` do próprio `payments`.
 
 **Quem utiliza:** É o ponto de entrada do Docker — o `Dockerfile` executa esta classe via `java -jar`.
 
@@ -185,21 +202,66 @@ Cliente recebe resposta JSON
 
 ---
 
-### `config/SecurityConfig.java`
+### `config/OpenAPIConfig.java`
 
-**Localização:** `com/edu/infnet/pb/payments/config/SecurityConfig.java`
+**Localização:** `com/edu/infnet/pb/payments/config/OpenAPIConfig.java`
 
-**Responsabilidade:** Define as regras de segurança HTTP e registra o componente que valida tokens JWT.
+**Responsabilidade:** Configura os metadados da documentação OpenAPI (Swagger) do serviço.
 
-**Por que existe:** Com `spring-boot-starter-security` no classpath, o Spring Security está ativo e bloqueia tudo por padrão. Esta classe sobrescreve esse comportamento padrão com as regras específicas do `payments`: libera `/actuator/**` e exige JWT em todo o resto.
+**Por que existe:** Personaliza o título, descrição, versão e contato exibidos no Swagger UI. Sem ela, o Swagger UI mostraria informações genéricas geradas automaticamente pelo Springdoc.
 
-**Quem utiliza:** O próprio Spring Security — lê esta configuração ao inicializar. Nenhum outro código chama esta classe diretamente.
+**Quem utiliza:** O Springdoc lê esta configuração ao gerar a spec em `/v3/api-docs`. O Swagger UI centralizado (`localhost:8089`) consome essa spec via Kong (`/docs/payments/v3/api-docs`).
 
-**Como participa do fluxo:** Toda requisição HTTP passa pelo `SecurityFilterChain` definido aqui antes de chegar em qualquer controller. É a primeira barreira de segurança da aplicação.
+**Nenhum outro código Java depende desta classe.**
+
+---
+
+### `SecurityConfig` (módulo `shared`)
+
+**Localização:** `services/shared/src/main/java/com/edu/infnet/pb/config/SecurityConfig.java`
+
+**Responsabilidade:** Define as regras de segurança HTTP e registra o componente que valida tokens JWT. Este arquivo não existe dentro do `payments` — é fornecido pelo módulo `shared` e carregado automaticamente graças ao `scanBasePackages = "com.edu.infnet.pb"` no `PaymentsApplication`.
+
+**Regras configuradas:**
+- `/actuator/**` → livre, sem autenticação (para Docker healthcheck e Prometheus)
+- `POST /auth/register`, `POST /auth/login` → livres (rotas do `users`, ignoradas pelo `payments`)
+- Qualquer outra rota → exige JWT válido no header `Authorization`, via `.anyRequest().authenticated()`
+- CSRF desabilitado (não aplicável em APIs REST stateless)
+- Sessão: STATELESS (nunca cria HttpSession)
+- Modo OAuth2 Resource Server com JWT
 
 **Dependências:**
-- `app.key.pub` — lido via `@Value("${jwt.public.key}")`, convertido para `RSAPublicKey`
-- `application.yaml` — propriedade `jwt.public.key` que aponta para o arquivo
+- `app.key.pub` — lido via `@Value("${jwt.public.key}")`, convertido para `RSAPublicKey`. **Sem valor default.**
+- `app.key` — lido via `@Value("${jwt.private.key}")`, convertido para `RSAPrivateKey`. Necessário porque o `SecurityConfig` também declara o bean `JwtEncoder` (usado apenas pelo `users`, mas presente em todos os serviços que importam o `shared`).
+- O `payments/application.yaml` **precisa declarar explicitamente** as duas propriedades `jwt.public.key` e `jwt.private.key` apontando para `classpath:`. Sem isso, o contexto Spring falha na inicialização com `PlaceholderResolutionException`.
+
+> **Atenção — regra crítica de manutenção:** se `.anyRequest().authenticated()` for removido do `SecurityConfig` do `shared`, todo JWT válido passa a receber `403 Forbidden` em qualquer rota não listada explicitamente — mesmo estando corretamente autenticado. Esse foi um bug real encontrado durante a validação da integração com Kafka: a ausência dessa regra fazia requisições autenticadas falharem silenciosamente com 403, sem nenhuma mensagem indicando a causa.
+
+---
+
+### `app.key.pub` (módulo `shared`)
+
+**Localização:** `services/shared/src/main/resources/app.key.pub`
+
+**Responsabilidade:** Armazenar a chave pública RSA usada para verificar a assinatura dos tokens JWT.
+
+**Por que existe:** O `users` assina os tokens com sua chave privada (`app.key`). Para verificar que um token é legítimo — que foi realmente emitido pelo `users` e não foi adulterado — o `payments` precisa da chave pública correspondente. É matematicamente impossível verificar sem ela.
+
+**Como é carregado:** O arquivo está em `src/main/resources/` do módulo `shared`. Quando o `shared` é compilado como JAR, o arquivo entra no classpath. O `payments/application.yaml` declara `jwt.public.key: classpath:app.key.pub`, e o `SecurityConfig` do `shared` lê essa propriedade via `@Value("${jwt.public.key}")`, convertendo para `RSAPublicKey`.
+
+**Cuidado:** Este arquivo deve ser **idêntico** ao `app.key.pub` do microsserviço `users`. Se o `users` trocar seu par de chaves RSA, o `app.key.pub` do `shared` deve ser atualizado junto — caso contrário todos os tokens emitidos pelo `users` passarão a ser rejeitados pelo `payments` (e por qualquer outro serviço que use o `shared`).
+
+---
+
+### `app.key` (módulo `shared`)
+
+**Localização:** `services/shared/src/main/resources/app.key`
+
+**Responsabilidade:** Armazenar a chave privada RSA usada para assinar tokens JWT.
+
+**Por que o `payments` precisa dela:** O `payments` nunca assina tokens — apenas o `users` faz login e emite JWT. Porém, o `SecurityConfig` do `shared` é compartilhado por todos os serviços e declara um bean `JwtEncoder`, que exige a chave privada para ser construído. Como o `payments` carrega esse `SecurityConfig` via `scanBasePackages`, ele precisa fornecer a propriedade `jwt.private.key`, mesmo nunca chamando o `JwtEncoder`.
+
+**Como é carregado:** Igual ao `app.key.pub` — via `jwt.private.key: classpath:app.key` no `application.yaml`, convertido para `RSAPrivateKey` pelo Spring.
 
 ---
 
@@ -261,6 +323,77 @@ Cliente recebe resposta JSON
 | `status` | `PaymentStatus` | Estado atual do pagamento |
 | `createdAt` | `LocalDateTime` | Data e hora de criação |
 | `updatedAt` | `LocalDateTime` | Data e hora da última atualização |
+
+---
+
+### `dto/PaymentEvent.java`
+
+**Localização:** `com/edu/infnet/pb/payments/dto/PaymentEvent.java`
+
+**Responsabilidade:** Representar o payload publicado no Kafka a cada mudança de estado de um pagamento.
+
+**Por que existe:** É o contrato dos eventos do `payments` para o restante do ecossistema. Diferente do `PaymentResponse` (contrato HTTP), este é o contrato assíncrono — consumidores Kafka de outros serviços dependem desta estrutura.
+
+**Quem utiliza:** `PaymentService` (constrói via `toEvent()`), `PaymentProducer` (recebe pronto e publica).
+
+**Campos:**
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `paymentId` | `UUID` | Identifica o pagamento que originou o evento |
+| `userId` | `UUID` | Dono do pagamento |
+| `amount` | `BigDecimal` | Valor do pagamento |
+| `method` | `PaymentMethod` | Método utilizado |
+| `status` | `PaymentStatus` | Estado do pagamento **no momento do evento** — é o dado central da mensagem |
+| `timestamp` | `LocalDateTime` | Quando o evento ocorreu (usa o `updatedAt` do pagamento no instante da publicação) |
+
+**Nota sobre serialização:** o `JsonSerializer` do Kafka serializa `LocalDateTime` como array (`[2026,6,16,23,30,26,267482000]`), não como string ISO-8601. Funcional, mas não é o formato mais amigável para consumidores — ajuste pendente antes de outros serviços passarem a consumir estes tópicos.
+
+---
+
+### `config/KafkaConfig.java`
+
+**Localização:** `com/edu/infnet/pb/payments/config/KafkaConfig.java`
+
+**Responsabilidade:** Declarar os tópicos Kafka usados pelo `payments` como beans `NewTopic`.
+
+**Por que existe:** O Kafka do ambiente roda com `KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"` (configurado no `docker-compose.yaml`). Sem essa classe, qualquer tentativa de publicar em um tópico inexistente falha. O Spring Kafka detecta automaticamente beans `NewTopic` no contexto e cria os tópicos correspondentes no broker durante o startup.
+
+**Tópicos declarados:**
+
+| Tópico | Partições | Replicação | Quando é usado |
+|---|---|---|---|
+| `payment.initiated` | 1 | 1 | Publicado logo após a criação do pagamento (status `PENDING`) |
+| `payment.approved` | 1 | 1 | Publicado quando o processamento aprova o pagamento |
+| `payment.failed` | 1 | 1 | Publicado quando o processamento reprova o pagamento |
+
+**Quem utiliza:** Nenhum código chama esta classe diretamente — o Spring Kafka a descobre via `@Configuration` e processa os beans `NewTopic` automaticamente no startup.
+
+---
+
+### `producer/PaymentProducer.java`
+
+**Localização:** `com/edu/infnet/pb/payments/producer/PaymentProducer.java`
+
+**Responsabilidade:** Publicar um `PaymentEvent` no tópico Kafka correto, decidido a partir do `status` do evento.
+
+**Por que existe:** Centraliza a lógica de "qual tópico usar" em um único lugar. O `PaymentService` não decide nomes de tópico — apenas informa o que aconteceu, e o producer decide onde publicar.
+
+**Quem utiliza:** `PaymentService`, injetado via construtor (`@RequiredArgsConstructor`).
+
+**Depende de:** `KafkaTemplate<String, PaymentEvent>` (auto-configurado pelo Spring Boot a partir das propriedades `spring.kafka.*` do `application.yaml` — nenhuma configuração manual de `KafkaTemplate` é necessária).
+
+**Lógica de roteamento:**
+```text
+PENDING  → payment.initiated
+APPROVED → payment.approved
+FAILED   → payment.failed
+CANCELLED (ou qualquer outro) → nenhum tópico, apenas log de aviso
+```
+
+**Chave da mensagem:** o `paymentId` (como String). Isso garante que todos os eventos de um mesmo pagamento caiam na mesma partição, preservando a ordem entre eles.
+
+**Tratamento de erro:** `kafkaTemplate.send()` é assíncrono e retorna um `CompletableFuture`. O producer usa `.whenComplete()` para logar sucesso ou falha sem bloquear o fluxo principal — uma falha de publicação no Kafka **não impede** a resposta HTTP ao cliente nem derruba o serviço.
 
 ---
 
@@ -375,27 +508,13 @@ Cliente recebe resposta JSON
 
 **Localização:** `com/edu/infnet/pb/payments/service/PaymentService.java`
 
-**Responsabilidade:** Implementar todas as regras de negócio do domínio de pagamentos. É a camada central da aplicação.
+**Responsabilidade:** Implementar todas as regras de negócio do domínio de pagamentos — incluindo a simulação de processamento e o disparo de eventos Kafka. É a camada central da aplicação.
 
-**Por que existe:** Separa a lógica de negócio do protocolo HTTP (controller) e do acesso a dados (repository). Se amanhã a API mudar de REST para gRPC, o service não muda.
+**Por que existe:** Separa a lógica de negócio do protocolo HTTP (controller), do acesso a dados (repository) e da mensageria (producer). Se amanhã a API mudar de REST para gRPC, ou o Kafka for trocado por outro broker, o service não muda.
 
 **Quem utiliza:** `PaymentController` — é o único componente que deve chamar o service diretamente.
 
-**Depende de:** `PaymentRepository`, `Payment`, `PaymentRequest`, `PaymentResponse`, `PaymentStatus`.
-
----
-
-### `resources/app.key.pub`
-
-**Localização:** `src/main/resources/app.key.pub`
-
-**Responsabilidade:** Armazenar a chave pública RSA usada para verificar a assinatura dos tokens JWT.
-
-**Por que existe:** O `users` assina os tokens com sua chave privada (`app.key`). Para verificar que um token é legítimo — que foi realmente emitido pelo `users` e não foi adulterado — o `payments` precisa da chave pública correspondente. É matematicamente impossível verificar sem ela.
-
-**Como é carregado:** O Spring lê o arquivo via `jwt.public.key: classpath:app.key.pub` no `application.yaml` e converte automaticamente para `RSAPublicKey` quando injetado com `@Value` no `SecurityConfig`.
-
-**Cuidado:** Este arquivo deve ser **idêntico** ao `app.key.pub` do microsserviço `users`. Se o `users` trocar seu par de chaves RSA, o `app.key.pub` do `payments` deve ser atualizado junto — caso contrário todos os tokens emitidos pelo `users` passarão a ser rejeitados pelo `payments`.
+**Depende de:** `PaymentRepository`, `PaymentProducer`, `Payment`, `PaymentRequest`, `PaymentResponse`, `PaymentEvent`, `PaymentStatus`.
 
 ---
 
@@ -416,27 +535,42 @@ spring:
     url: jdbc:postgresql://pg:5432/payments  # banco exclusivo do payments
     username: admin
     password: admin
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: update       # Hibernate cria/atualiza tabelas automaticamente
     show-sql: true           # loga todas as queries SQL no console
 
-jwt:
-  public:
-    key: classpath:app.key.pub  # caminho da chave pública RSA
+  kafka:
+    bootstrap-servers: kafka:29092   # endereço do broker na rede interna do Docker
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
   port: 8085                 # porta do serviço
 
+jwt:
+  public:
+    key: classpath:app.key.pub   # obrigatório — sem default no SecurityConfig do shared
+  private:
+    key: classpath:app.key       # obrigatório — exigido pelo bean JwtEncoder do shared, não usado pelo payments
+
 eureka:                      # registro e descoberta de serviços
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
   client:
     service-url:
       defaultZone: http://eureka:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
 
 logging:
+  level:
+    "[com.edu.infnet.pb]": TRACE
   pattern:
-    correlation: "[payments,traceId,spanId]"  # correlaciona logs com traces
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
 
 management:
   tracing:
@@ -445,13 +579,24 @@ management:
   endpoints:
     web:
       exposure:
-        include: [health, prometheus, info]  # endpoints do Actuator expostos
+        include:
+          - health
+          - prometheus
+          - info
 
 otel:
   exporter:
     otlp:
       endpoint: "http://jaeger:4318"  # envia traces para o Jaeger
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
 ```
+
+> As propriedades `jwt.public.key` e `jwt.private.key` são declaradas explicitamente aqui — o `SecurityConfig` do módulo `shared` não tem mais valor default. A propriedade `spring.kafka.bootstrap-servers` aponta para `kafka:29092`, o nome DNS do broker na rede interna do Docker Compose.
 
 ---
 
@@ -465,18 +610,20 @@ otel:
 |---|---|
 | `spring-boot-starter-web` | Servidor HTTP, controllers REST, Jackson (JSON) |
 | `spring-boot-starter-data-jpa` | Hibernate, Spring Data, queries automáticas |
-| `spring-boot-starter-security` | Framework de segurança, filtros HTTP |
-| `spring-boot-starter-oauth2-resource-server` | Suporte a JWT, `NimbusJwtDecoder` |
 | `spring-boot-starter-validation` | Bean Validation (`@NotNull`, `@DecimalMin`) |
 | `spring-boot-starter-actuator` | Endpoints `/actuator/health` e `/actuator/prometheus` |
 | `postgresql` | Driver JDBC para PostgreSQL |
+| `shared` (módulo local) | Fornece `SecurityConfig`, `app.key.pub`, `spring-boot-starter-security` e `spring-boot-starter-oauth2-resource-server` |
 | `spring-cloud-starter-netflix-eureka-client` | Registro do serviço no Eureka |
-| `spring-kafka` | Dependência presente, Kafka não implementado ainda |
+| `spring-kafka` | Publicação de eventos de pagamento via `PaymentProducer` e `KafkaTemplate` (ver `config/KafkaConfig.java`, `producer/PaymentProducer.java`) |
 | `spring-cloud-starter-circuitbreaker-resilience4j` | Circuit Breaker, não configurado ainda |
 | `micrometer-registry-prometheus` | Expõe métricas no formato Prometheus |
 | `opentelemetry-spring-boot-starter` | Rastreamento distribuído enviado ao Jaeger |
 | `lombok` | Geração de código boilerplate (`@Builder`, `@Getter`, etc.) |
 | `spring-boot-starter-log4j2` | Sistema de logging |
+| `springdoc-openapi-starter-webmvc-ui` | Swagger UI e geração de spec OpenAPI |
+
+> `spring-boot-starter-security` e `spring-boot-starter-oauth2-resource-server` não são dependências diretas do `payments` — chegam transitivamente via o módulo `shared`.
 
 ---
 
@@ -484,7 +631,7 @@ otel:
 
 ### `PaymentService.create(PaymentRequest request, UUID userId)`
 
-**Objetivo:** Criar um novo pagamento no banco de dados.
+**Objetivo:** Criar um novo pagamento, processá-lo (simulação de gateway) e publicar os eventos correspondentes no Kafka.
 
 **Parâmetros:**
 - `request` — body da requisição com `amount` e `method`, já validados pelo `@Valid` no controller
@@ -492,22 +639,52 @@ otel:
 
 **Fluxo interno:**
 1. Constrói uma entidade `Payment` via Builder com os dados do request + userId + status `PENDING`
-2. Persiste no banco via `repository.save()`
-3. O Hibernate preenche `id`, `createdAt` e `updatedAt` automaticamente
-4. Converte a entidade salva para `PaymentResponse` via `toResponse()`
-5. Retorna o DTO
+2. Persiste no banco via `repository.save()` — esta é a primeira gravação, com status `PENDING`
+3. Publica no Kafka o evento referente a esse estado `PENDING` (tópico `payment.initiated`) via `producer.publish(toEvent(saved))`
+4. Chama `process(saved)`, que decide o status final (`APPROVED` ou `FAILED`) e salva novamente no banco
+5. Publica no Kafka o evento referente ao estado final (tópico `payment.approved` ou `payment.failed`)
+6. Converte a entidade processada para `PaymentResponse` via `toResponse()`
+7. Retorna o DTO já com o status final
 
-**Retorno:** `PaymentResponse` com todos os campos preenchidos, incluindo o UUID gerado.
+**Retorno:** `PaymentResponse` com todos os campos preenchidos, incluindo o UUID gerado e o status final (`APPROVED` ou `FAILED` — nunca `PENDING`, pois o processamento acontece de forma síncrona dentro da mesma chamada).
 
-**Exceções:** Nenhuma lançada diretamente. Erros de banco (ex: violação de constraint) seriam capturados pelo `GlobalExceptionHandler` como 500.
+**Exceções:** Nenhuma lançada diretamente. Erros de banco (ex: violação de constraint) seriam capturados pelo `GlobalExceptionHandler` como 500. Falhas ao publicar no Kafka são tratadas dentro de `PaymentProducer` (log de erro) e não interrompem o fluxo nem alteram a resposta HTTP.
 
 **Exemplo prático:**
 ```
 Entrada: { amount: 150.00, method: "PIX" }, userId: "uuid-abc"
 Saída:   { id: "uuid-xyz", userId: "uuid-abc", amount: 150.00,
-           method: "PIX", status: "PENDING",
+           method: "PIX", status: "APPROVED",
            createdAt: "2026-06-09T21:00:00", updatedAt: "2026-06-09T21:00:00" }
 ```
+
+---
+
+### `PaymentService.process(Payment payment)` (privado)
+
+**Objetivo:** Simular a decisão de um gateway de pagamento, definindo se o pagamento é aprovado ou falha.
+
+**Regra aplicada:** valor menor que `1000.00` → `APPROVED`; valor maior ou igual a `1000.00` → `FAILED`. É uma regra determinística e arbitrária, documentada como simulação acadêmica — não existe integração com gateway real (ver Seção 8, "Processamento de pagamento").
+
+**Fluxo interno:**
+1. Compara `payment.getAmount()` com `BigDecimal("1000.00")` via `compareTo`
+2. Define o novo status na própria entidade (`payment.setStatus(status)`)
+3. Persiste a alteração via `repository.save(payment)` — segunda gravação no banco para o mesmo pagamento
+4. Retorna a entidade atualizada
+
+**Retorno:** `Payment` com o status final já persistido.
+
+**Utilizado por:** `create`, logo após a primeira gravação como `PENDING`.
+
+---
+
+### `PaymentService.toEvent(Payment payment)` (privado)
+
+**Objetivo:** Converter uma entidade `Payment` no DTO `PaymentEvent`, usado exclusivamente para publicação no Kafka.
+
+**Por que existe:** Mantém o formato do evento Kafka desacoplado do formato do `PaymentResponse` (DTO de resposta HTTP). Embora hoje os dois tenham campos parecidos, representam contratos diferentes — um é consumido por outros serviços via Kafka, o outro é consumido pelo cliente HTTP.
+
+**Utilizado por:** `create`, duas vezes — uma vez para o estado `PENDING` e outra vez para o estado final (`APPROVED`/`FAILED`).
 
 ---
 
@@ -596,6 +773,8 @@ Cancela pagamento APPROVED próprio  → 422 Unprocessable Entity
 Cancela pagamento de outro usuário  → 403 Forbidden
 ```
 
+> **Atenção — limitação prática introduzida pelo processamento síncrono:** desde que `create()` passou a chamar `process()` de forma síncrona, todo pagamento criado já sai do banco como `APPROVED` ou `FAILED` — nunca permanece em `PENDING`. Como `cancel()` só aceita pagamentos em `PENDING`, esse método se tornou praticamente inalcançável no fluxo atual (só seria possível inserindo um registro `PENDING` diretamente no banco). O método e a regra continuam corretos e foram mantidos, mas essa condição deve ser reavaliada caso o processamento se torne assíncrono no futuro.
+
 ---
 
 ### `PaymentService.toResponse(Payment payment)` (privado)
@@ -608,28 +787,23 @@ Cancela pagamento de outro usuário  → 403 Forbidden
 
 ---
 
-### `SecurityConfig.securityFilterChain(HttpSecurity http)`
+### `SecurityConfig.securityFilterChain` e `SecurityConfig.jwtDecoder` (módulo `shared`)
 
-**Objetivo:** Definir as regras de autorização HTTP da aplicação.
+**Objetivo:** Definir as regras de autorização HTTP e registrar o decoder JWT. Descritos aqui pois impactam diretamente o comportamento do `payments`.
 
-**Regras configuradas:**
-- `/actuator/**` → livre, sem autenticação (para Docker healthcheck e Prometheus)
-- Qualquer outra rota → exige JWT válido no header `Authorization`
-- CSRF desabilitado (não aplicável em APIs REST stateless)
-- Sessão: STATELESS (nunca cria HttpSession)
-- Modo OAuth2 Resource Server com JWT
+**`securityFilterChain`** — regras:
+- `/actuator/**` → livre (Docker healthcheck e Prometheus)
+- `POST /auth/register`, `POST /auth/login` → livre (rotas públicas do `users`, ignoradas pelo `payments`)
+- Qualquer outra rota → exige JWT válido no header `Authorization`, via `.anyRequest().authenticated()`
+- CSRF desabilitado; sessão STATELESS
 
----
+> Não existe regra liberando `/swagger-ui/**` ou `/v3/api-docs/**`. Com `.anyRequest().authenticated()` ativo, essas rotas também exigem JWT válido.
 
-### `SecurityConfig.jwtDecoder()`
-
-**Objetivo:** Registrar o componente que valida e decodifica tokens JWT.
-
-**Como funciona:** Cria um `NimbusJwtDecoder` configurado com a chave pública RSA. Quando uma requisição chega com `Authorization: Bearer <token>`, o Spring usa este decoder para:
-1. Decodificar o Base64 do token
-2. Verificar a assinatura RSA com `app.key.pub`
-3. Verificar se o token está expirado
-4. Disponibilizar os claims via `@AuthenticationPrincipal Jwt`
+**`jwtDecoder`** — cria um `NimbusJwtDecoder` com a chave pública RSA (`app.key.pub`). Para cada requisição:
+1. Decodifica o Base64 do token
+2. Verifica a assinatura RSA
+3. Verifica se o token está expirado
+4. Disponibiliza os claims via `@AuthenticationPrincipal Jwt`
 
 ---
 
@@ -652,7 +826,7 @@ header.payload.signature
 RS256 é o algoritmo de assinatura digital usado neste projeto. Usa **criptografia assimétrica RSA**:
 
 - Quem assina usa a **chave privada** — somente o `users` tem
-- Quem verifica usa a **chave pública** — o `payments` tem
+- Quem verifica usa a **chave pública** — o `shared` tem, fornecendo ao `payments`
 
 Isso significa que qualquer serviço pode verificar se um token é legítimo, mas **somente o `users` pode emitir tokens**. Se alguém tentar criar um token falso sem a chave privada, a verificação falhará.
 
@@ -672,13 +846,13 @@ Isso significa que qualquer serviço pode verificar se um token é legítimo, ma
                           │  token armazenado pelo cliente
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  VALIDADOR (payments)                                           │
+│  VALIDADOR (payments via shared)                                │
 │                                                                 │
 │  1. Cliente envia: Authorization: Bearer eyJ...                 │
-│  2. SecurityFilterChain intercepta a requisição                 │
+│  2. SecurityFilterChain (do shared) intercepta a requisição     │
 │  3. JwtDecoder extrai e verifica o token:                       │
 │     a. Decodifica Base64                                        │
-│     b. Verifica assinatura com app.key.pub                      │
+│     b. Verifica assinatura com app.key.pub (do shared)          │
 │     c. Verifica se exp > agora                                  │
 │  4. Se inválido → 401 Unauthorized (sem chegar ao controller)   │
 │  5. Se válido → Jwt disponível via @AuthenticationPrincipal     │
@@ -742,11 +916,13 @@ UUID userId = UUID.fromString(jwt.getSubject());
   "userId": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
   "amount": 150.00,
   "method": "PIX",
-  "status": "PENDING",
+  "status": "APPROVED",
   "createdAt": "2026-06-09T21:00:00",
   "updatedAt": "2026-06-09T21:00:00"
 }
 ```
+
+> O `status` retornado nunca é `PENDING` — o processamento (simulação de gateway) acontece de forma síncrona dentro da própria chamada a `create()`, então a resposta já reflete o resultado final: `APPROVED` (amount < 1000.00) ou `FAILED` (amount >= 1000.00). Ver Seção 8, "Processamento de pagamento".
 
 **Possíveis erros:**
 
@@ -776,11 +952,13 @@ UUID userId = UUID.fromString(jwt.getSubject());
   "userId": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
   "amount": 150.00,
   "method": "PIX",
-  "status": "PENDING",
+  "status": "APPROVED",
   "createdAt": "2026-06-09T21:00:00",
   "updatedAt": "2026-06-09T21:00:00"
 }
 ```
+
+> O `status` aqui pode ser `APPROVED`, `FAILED` ou `CANCELLED` — na prática não é mais possível observar `PENDING`, já que o processamento ocorre de forma síncrona no momento da criação (ver Seção 8).
 
 **Possíveis erros:**
 
@@ -809,7 +987,7 @@ UUID userId = UUID.fromString(jwt.getSubject());
     "userId": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
     "amount": 150.00,
     "method": "PIX",
-    "status": "PENDING",
+    "status": "APPROVED",
     "createdAt": "2026-06-09T21:00:00",
     "updatedAt": "2026-06-09T21:00:00"
   }
@@ -910,11 +1088,26 @@ password: admin
 
 ### Criação de pagamento
 
-- Todo pagamento nasce com status `PENDING`
+- Todo pagamento nasce com status `PENDING` e é persistido nesse estado antes de qualquer processamento
 - O `userId` vem **exclusivamente** do JWT — nunca do body
 - O `amount` deve ser maior que `0.01`
 - O `method` deve ser um dos valores válidos do enum `PaymentMethod`
 - Não há limite de pagamentos por usuário
+- Logo após a criação, o pagamento é processado de forma síncrona (ver "Processamento de pagamento" abaixo) — a resposta da requisição já reflete o status final
+
+### Processamento de pagamento
+
+- Não há integração com gateway de pagamento real (Mercado Pago, Stripe, PagSeguro, Cielo, etc.) — o objetivo do microsserviço é acadêmico, e a decisão de aprovação/reprovação é simulada internamente
+- Regra determinística aplicada em `PaymentService.process()`: `amount < 1000.00` → `APPROVED`; `amount >= 1000.00` → `FAILED`
+- O processamento ocorre de forma síncrona, dentro da mesma chamada a `create()` — não existe fila, delay ou callback assíncrono
+- Cada mudança de status gera um evento publicado no Kafka (ver "Eventos Kafka" abaixo e Seção 3, `producer/PaymentProducer.java`)
+
+### Eventos Kafka
+
+- Toda criação de pagamento publica dois eventos: um para o estado `PENDING` (tópico `payment.initiated`) e outro para o estado final (`payment.approved` ou `payment.failed`)
+- A chave de cada mensagem é o `paymentId` (como String), garantindo que eventos do mesmo pagamento fiquem na mesma partição
+- A publicação é assíncrona e não bloqueia nem altera a resposta HTTP — falhas de publicação são apenas logadas (ver `PaymentProducer.publish()`)
+- Os tópicos são criados explicitamente via `KafkaConfig` (`KAFKA_AUTO_CREATE_TOPICS_ENABLE` está desabilitado no cluster)
 
 ### Consulta de pagamento
 
@@ -934,6 +1127,8 @@ password: admin
 - Tentar cancelar `APPROVED`, `FAILED` ou `CANCELLED` → `422 Unprocessable Entity`
 - O dono do pagamento é verificado antes do status — `403` tem precedência sobre `422`
 - Após cancelamento, o status não pode mais ser alterado (não há endpoint para tal)
+
+> **Limitação prática atual:** como o processamento (acima) é síncrono, todo pagamento criado já sai do banco como `APPROVED` ou `FAILED` — nunca permanece em `PENDING`. Na prática, não há mais como atingir o endpoint de cancelamento com um pagamento elegível, a menos que um registro `PENDING` seja inserido manualmente no banco. A regra de negócio em si permanece válida e implementada.
 
 ### Códigos HTTP utilizados
 
@@ -961,7 +1156,7 @@ Cliente
   Body: { "amount": 200.00, "method": "CREDIT_CARD" }
   │
   ▼
-SecurityFilterChain
+SecurityFilterChain (shared)
   Extrai token do header → JwtDecoder verifica assinatura → válido
   │
   ▼
@@ -978,21 +1173,42 @@ PaymentService.create()
     .method(CREDIT_CARD)
     .status(PENDING)
     .build()
-  repository.save(payment)
+  saved = repository.save(payment)
   │
   ▼
-PaymentRepository → PostgreSQL
+PaymentRepository → PostgreSQL (1ª gravação)
   INSERT INTO payments (id, user_id, amount, method, status, created_at, updated_at)
   VALUES (gen_uuid, 'uuid-abc', 200.00, 'CREDIT_CARD', 'PENDING', now(), now())
   │
   ▼
+PaymentProducer.publish(toEvent(saved))
+  status = PENDING → tópico "payment.initiated"
+  kafkaTemplate.send("payment.initiated", paymentId, event)  [assíncrono]
+  │
+  ▼
+PaymentService.process(saved)
+  amount (200.00) < 1000.00 → status = APPROVED
+  processed = repository.save(payment)
+  │
+  ▼
+PaymentRepository → PostgreSQL (2ª gravação)
+  UPDATE payments SET status = 'APPROVED', updated_at = now() WHERE id = gen_uuid
+  │
+  ▼
+PaymentProducer.publish(toEvent(processed))
+  status = APPROVED → tópico "payment.approved"
+  kafkaTemplate.send("payment.approved", paymentId, event)  [assíncrono]
+  │
+  ▼
 PaymentService
-  toResponse(savedPayment) → PaymentResponse
+  toResponse(processed) → PaymentResponse
   │
   ▼
 Cliente recebe: 201 Created
-{ "id": "uuid-xyz", "status": "PENDING", ... }
+{ "id": "uuid-xyz", "status": "APPROVED", ... }
 ```
+
+> Se `amount` fosse `1500.00` (>= 1000.00), o fluxo seria idêntico até `process()`, que definiria `status = FAILED` e o evento publicado no segundo passo iria para o tópico `payment.failed` em vez de `payment.approved`. A resposta HTTP continua `201 Created` — falha no processamento simulado não é um erro HTTP, é um resultado de negócio válido.
 
 ---
 
@@ -1004,7 +1220,7 @@ Cliente
   Authorization: Bearer eyJ...
   │
   ▼
-SecurityFilterChain → token válido
+SecurityFilterChain (shared) → token válido
   │
   ▼
 PaymentController.findMyPayments()
@@ -1038,7 +1254,7 @@ Cliente (usuário B, token de B)
   Authorization: Bearer eyJ...token-de-B...
   │
   ▼
-SecurityFilterChain → token de B é válido → userId = "uuid-B"
+SecurityFilterChain (shared) → token de B é válido → userId = "uuid-B"
   │
   ▼
 PaymentController.findById()
@@ -1069,7 +1285,7 @@ Cliente
   Authorization: Bearer eyJ...
   │
   ▼
-SecurityFilterChain → válido → userId = "uuid-abc"
+SecurityFilterChain (shared) → válido → userId = "uuid-abc"
   │
   ▼
 PaymentController.cancel()
@@ -1123,7 +1339,7 @@ Cliente
   (sem header Authorization)
   │
   ▼
-SecurityFilterChain
+SecurityFilterChain (shared)
   Nenhum token encontrado
   Retorna 401 imediatamente
   O controller nunca é chamado
@@ -1139,10 +1355,13 @@ Cliente recebe: 401 Unauthorized
 ### Funcionalidades implementadas
 
 - [x] Criação de pagamento com status `PENDING`
+- [x] Processamento de pagamento (simulação de gateway, regra determinística por valor)
+- [x] Transições de status `PENDING → APPROVED` ou `PENDING → FAILED`
+- [x] Eventos Kafka (`payment.initiated`, `payment.approved`, `payment.failed`)
 - [x] Consulta de pagamento por ID (com verificação de ownership)
 - [x] Listagem de pagamentos do usuário autenticado
-- [x] Cancelamento de pagamento (apenas se `PENDING`)
-- [x] Autenticação via JWT RS256
+- [x] Cancelamento de pagamento (apenas se `PENDING` — ver limitação prática na Seção 8)
+- [x] Autenticação via JWT RS256 (via módulo `shared`)
 - [x] Extração segura do `userId` pelo claim `sub` do token
 - [x] Tratamento centralizado de erros com respostas padronizadas
 - [x] Validação de entrada com Bean Validation
@@ -1150,12 +1369,12 @@ Cliente recebe: 401 Unauthorized
 - [x] Rastreamento distribuído via OpenTelemetry → Jaeger
 - [x] Métricas expostas para Prometheus via `/actuator/prometheus`
 - [x] Health check em `/actuator/health`
+- [x] Documentação Swagger em `/swagger-ui.html` e `/v3/api-docs`
 
 ### Funcionalidades pendentes
 
-- [ ] Processamento de pagamento (simulação de gateway)
-- [ ] Máquina de estado (transições `PENDING → APPROVED/FAILED`)
-- [ ] Eventos Kafka (`payment.initiated`, `payment.approved`, `payment.failed`)
+- [ ] Testes unitários e de integração (PaymentService, Kafka via EmbeddedKafka)
+- [ ] Serialização de `timestamp` como ISO-8601 no `PaymentEvent` (atualmente serializa como array Jackson — ver Limitações atuais)
 - [ ] Endpoint de webhook (`POST /payments/webhook`)
 - [ ] Proteção JWT no Kong para as rotas de `/payments`
 - [ ] Flyway para controle de migrações de banco
@@ -1164,8 +1383,8 @@ Cliente recebe: 401 Unauthorized
 
 ### Limitações atuais
 
-- Todo pagamento criado fica eternamente em `PENDING` — não há mecanismo de processamento implementado
-- Nenhum evento é publicado no Kafka quando o status muda
+- O campo `timestamp` do `PaymentEvent` serializa como array Jackson (`[2026,6,16,23,30,26,267482000]`) em vez de String ISO-8601 — isso precisa ser corrigido antes que outros serviços comecem a consumir esses tópicos, pois exige um parser específico no lado do consumidor
+- Com o processamento síncrono, todo pagamento criado já sai como `APPROVED` ou `FAILED` — o cancelamento (`PENDING` obrigatório) ficou praticamente inalcançável no fluxo real (ver Seção 8)
 - As rotas `/payments` no Kong não exigem JWT — a proteção existe apenas no nível da aplicação
 - `ddl-auto: update` — adequado para desenvolvimento, inadequado para produção
 
@@ -1177,52 +1396,22 @@ Cliente recebe: 401 Unauthorized
 | Sem paginação na listagem | Um usuário com muitos pagamentos pode sobrecarregar a memória | `Pageable` no repository + `Page<PaymentResponse>` no controller |
 | Sem índice em `user_id` | Queries lentas com volume alto de dados | `@Index` na entidade ou migration Flyway |
 | Rotas sem JWT no Kong | Qualquer cliente externo pode chamar sem token se passar direto pelo Kong | Adicionar plugin JWT no `kong.yaml` |
-| `app.key.pub` no repositório | Má prática de segurança — chaves não deveriam estar no código | Secrets do Docker/Kubernetes ou variável de ambiente |
+| `app.key.pub` no repositório (via shared) | Má prática de segurança — chaves não deveriam estar no código | Secrets do Docker/Kubernetes ou variável de ambiente |
+| `timestamp` serializado como array no `PaymentEvent` | Consumidores Kafka precisam de parser específico em vez de ISO-8601 padrão | Configurar Jackson para serializar `LocalDateTime` como String (`WRITE_DATES_AS_TIMESTAMPS = false`) |
 
 ---
 
 ## 11. Próximos Passos
 
-### Etapa 3 — Máquina de estado e simulação de gateway
+Consulte o arquivo `IMPLEMENTACAO.md` na raiz deste módulo para o plano detalhado de implementação com etapas, critérios de conclusão e checklist de validação.
 
-Implementar a lógica que processa o pagamento após sua criação. O pagamento nasce `PENDING` e deve transitar para `APPROVED` ou `FAILED` com base em uma simulação de gateway.
+Resumo das próximas etapas em ordem:
 
-**O que implementar:**
-- Método de simulação no `PaymentService` que altera o status após a criação
-- Validação das transições: `PENDING → APPROVED`, `PENDING → FAILED`, `APPROVED/FAILED → CANCELLED` é proibido
-- O cancelamento já está implementado — só falta garantir que `APPROVED` e `FAILED` não possam ser cancelados (já está, pelo check de status no `cancel`)
-
-**Onde mexer:** `PaymentService.java` — adicionar lógica de processamento no `create` ou em um método separado `process(UUID id)`.
-
----
-
-### Etapa 4 — Eventos Kafka
-
-Publicar eventos no Kafka quando o status de um pagamento muda, permitindo que outros serviços (como `store`) reajam de forma assíncrona.
-
-**O que implementar:**
-- `KafkaProducerConfig.java` em `config/`
-- `PaymentEventProducer.java` em `service/` ou `infrastructure/`
-- Criação dos tópicos: `payment.initiated`, `payment.approved`, `payment.failed`
-- Publicação nos pontos de transição de status no `PaymentService`
-
-**Dependência:** Kafka está rodando no Docker mas com `KAFKA_AUTO_CREATE_TOPICS_ENABLE: false` — os tópicos precisam ser criados explicitamente, seja via código (`NewTopic` bean) ou via CLI do Kafka.
-
----
-
-### Etapa 5 — Kong e webhook
-
-**Kong:** Atualizar `docker/kong/kong.yaml` para adicionar proteção JWT nas rotas de `/payments`, seguindo o padrão já existente para o `users-service`.
-
-**Webhook:** Implementar `POST /payments/webhook` como rota pública para receber callbacks de um gateway externo simulado, com validação de um secret no header.
-
----
-
-### Etapa 6 — Flyway e métricas customizadas
-
-**Flyway:** Adicionar dependência `flyway-core` no `pom.xml`, criar `src/main/resources/db/migration/V1__create_payments_table.sql`, remover `ddl-auto: update`.
-
-**Métricas:** Usar `MeterRegistry` do Micrometer no `PaymentService` para registrar contadores de pagamentos por status — visíveis no Grafana.
+1. ~~**Etapa 1 — Processamento de pagamento**~~ — concluída (simulação de gateway, transições de status)
+2. ~~**Etapa 2 — Kafka**~~ — concluída (tópicos, producer, eventos `payment.initiated`/`payment.approved`/`payment.failed`)
+3. **Etapa 3 — Testes** — unitários (`PaymentService`), integração (banco), Kafka (`EmbeddedKafka`)
+4. **Etapa 4 — Infraestrutura e integração** — Kong (proteção JWT nas rotas `/payments`), Flyway, correção da serialização do `timestamp`
+5. **Etapa 5 — Validação completa do ecossistema** — fluxo ponta a ponta com `users` e demais serviços consumindo os eventos do Kafka
 
 ---
 
@@ -1236,21 +1425,6 @@ Publicar eventos no Kafka quando o status de um pagamento muda, permitindo que o
    - Extrair o `userId` do JWT via `UUID.fromString(jwt.getSubject())`
    - Delegar toda lógica ao service
    - Nunca conter `if`, validações de negócio ou acesso ao repository diretamente
-
-**Exemplo de padrão a seguir:**
-```java
-// Controller — apenas recebe, extrai userId, delega
-@GetMapping("/example")
-public ExampleResponse example(@AuthenticationPrincipal Jwt jwt) {
-    UUID userId = UUID.fromString(jwt.getSubject());
-    return service.example(userId);
-}
-
-// Service — regra de negócio aqui
-public ExampleResponse example(UUID userId) {
-    // lógica, validações, acesso ao repository
-}
-```
 
 ### Onde implementar novas regras de negócio
 
@@ -1280,6 +1454,7 @@ Page<Payment> findByUserId(UUID userId, Pageable pageable);
 3. **Verificar ownership antes de qualquer operação** — sempre checar se o pagamento pertence ao usuário antes de retornar ou modificar
 4. **Lançar `ResponseStatusException` no service** — o `GlobalExceptionHandler` já trata automaticamente
 5. **Não colocar lógica de negócio no controller** — o controller é apenas tradutor entre HTTP e o service
+6. **Não criar `SecurityConfig` local** — a segurança vem do módulo `shared`; qualquer alteração nas regras de segurança deve ser feita em `services/shared/src/main/java/com/edu/infnet/pb/config/SecurityConfig.java`
 
 ### Padrões já utilizados que devem ser mantidos
 
@@ -1291,6 +1466,7 @@ Page<Payment> findByUserId(UUID userId, Pageable pageable);
 | Extração de `userId` do JWT | `UUID.fromString(jwt.getSubject())` | Segurança — nunca confiar no body |
 | `ResponseStatusException` | Lançada diretamente no service | Simples, sem necessidade de exceptions customizadas por ora |
 | `toResponse()` privado no service | Método centralizado de conversão | Manutenção em um único lugar |
+| Segurança via `shared` | `scanBasePackages = "com.edu.infnet.pb"` | Centraliza config de segurança em um único lugar para todos os serviços |
 
 ---
 
@@ -1298,26 +1474,27 @@ Page<Payment> findByUserId(UUID userId, Pageable pageable);
 
 O microsserviço `payments` é um **Resource Server OAuth2** que gerencia o ciclo de vida básico de pagamentos dentro da plataforma PB Mono Repo.
 
-**Stack:** Java 25 + Spring Boot 3.5.14 + Spring Security + OAuth2 Resource Server + Spring Data JPA + PostgreSQL.
+**Stack:** Java 25 + Spring Boot 3.5.14 + Spring Security (via `shared`) + OAuth2 Resource Server (via `shared`) + Spring Data JPA + PostgreSQL.
 
-**Segurança:** Valida tokens JWT RS256 emitidos pelo microsserviço `users` usando a chave pública RSA. O `userId` é sempre extraído do campo `sub` do token — nunca aceito do corpo da requisição.
+**Segurança:** Valida tokens JWT RS256 emitidos pelo microsserviço `users` usando a chave pública RSA fornecida pelo módulo `shared`. O `userId` é sempre extraído do campo `sub` do token — nunca aceito do corpo da requisição. O `SecurityConfig` e o `app.key.pub` vivem em `services/shared/`, não neste módulo.
 
 **Endpoints disponíveis:**
 
 | Método | Rota | O que faz |
 |---|---|---|
-| `POST` | `/payments` | Cria pagamento com status `PENDING` |
+| `POST` | `/payments` | Cria pagamento, processa (simulação de gateway) e publica eventos no Kafka; retorna `APPROVED` ou `FAILED` |
 | `GET` | `/payments/{id}` | Consulta pagamento (apenas o dono) |
 | `GET` | `/payments/my` | Lista todos os pagamentos do usuário autenticado |
-| `PATCH` | `/payments/{id}/cancel` | Cancela pagamento se estiver em `PENDING` |
+| `PATCH` | `/payments/{id}/cancel` | Cancela pagamento se estiver em `PENDING` (ver limitação prática na Seção 8) |
 
 **Regras centrais:**
-- Todo pagamento nasce `PENDING`
+- Todo pagamento nasce `PENDING`, é persistido nesse estado e em seguida processado de forma síncrona (`amount < 1000.00` → `APPROVED`; `amount >= 1000.00` → `FAILED`)
+- Cada transição de status publica um evento Kafka (`payment.initiated`, `payment.approved` ou `payment.failed`)
 - Apenas o dono do pagamento pode consultá-lo ou cancelá-lo
 - Cancelamento só é permitido no status `PENDING`
 - Erros retornam sempre JSON com `timestamp`, `status` e `message`
 
-**O que ainda não está implementado:** processamento real (o pagamento nunca sai de `PENDING`), eventos Kafka, proteção JWT no Kong, Flyway para migrações.
+**O que ainda não está implementado:** testes (unitários e de integração), correção da serialização do `timestamp` no evento Kafka (atualmente array Jackson, não ISO-8601), proteção JWT no Kong, Flyway para migrações.
 
 **Onde mexer para cada tarefa:**
 
@@ -1328,5 +1505,6 @@ O microsserviço `payments` é um **Resource Server OAuth2** que gerencia o cicl
 | Nova consulta ao banco | `PaymentRepository` |
 | Nova validação de entrada | `PaymentRequest` |
 | Novo tipo de erro tratado | `GlobalExceptionHandler` |
-| Nova configuração de segurança | `SecurityConfig` |
+| Configuração de segurança | `services/shared/.../SecurityConfig.java` |
 | Nova configuração da aplicação | `application.yaml` |
+| Documentação da API | `OpenAPIConfig` |

@@ -13,9 +13,11 @@ spring:
       ddl-auto: update
     show-sql: true
 
-jwt:
-  public:
-    key: classpath:app.key.pub
+  kafka:
+    bootstrap-servers: kafka:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
   port: 8085
@@ -65,3 +67,9 @@ otel:
     exporter: none
   logs:
     exporter: none
+
+jwt:
+  public:
+    key: classpath:app.key.pub
+  private:
+    key: classpath:app.key

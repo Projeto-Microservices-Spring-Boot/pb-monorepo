@@ -5,22 +5,27 @@ RUN apk add --no-cache curl
 
 WORKDIR /build
 
-COPY  pom.xml .
+# Instala o módulo shared no repositório Maven local do container
+COPY shared/pom.xml ./shared/pom.xml
+COPY shared/src ./shared/src
+RUN mvn -f shared/pom.xml install -DskipTests -B
 
-RUN mvn dependency:go-offline -B
+# Baixa dependências do payments
+COPY payments/pom.xml ./payments/pom.xml
+RUN mvn -f payments/pom.xml dependency:go-offline -B
 
 FROM deps AS build
 
-COPY src ./src
+COPY payments/src ./payments/src
 
-RUN mvn clean package -DskipTests 
+RUN mvn -f payments/pom.xml clean package -DskipTests
 
-FROM  eclipse-temurin:25-jre-alpine AS run
+FROM eclipse-temurin:25-jre-alpine AS run
 
 WORKDIR /app
 
-COPY --from=build /build/target/*.jar app.jar
+COPY --from=build /build/payments/target/*.jar app.jar
 
 EXPOSE 8085
 
-CMD [ "java" , "-jar", "app.jar" ]
+CMD [ "java", "-jar", "app.jar" ]

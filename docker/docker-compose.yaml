@@ -284,8 +284,8 @@ services:
   payments:
     container_name: payments-service
     build:
-      context: ../services/payments/
-      dockerfile: Dockerfile
+      context: ../services/
+      dockerfile: payments/Dockerfile
     ports:
       - "8085:8085"
     healthcheck:
@@ -297,7 +297,9 @@ services:
       pg:
         condition: service_healthy
       kong: 
-         condition: service_healthy  
+         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   stickers:
     container_name: stickers-service

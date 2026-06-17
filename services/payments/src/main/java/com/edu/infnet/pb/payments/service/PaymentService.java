@@ -3,13 +3,16 @@ package com.edu.infnet.pb.payments.service;
 import com.edu.infnet.pb.payments.dto.PaymentRequest;
 import com.edu.infnet.pb.payments.dto.PaymentResponse;
 import com.edu.infnet.pb.payments.entity.Payment;
+import com.edu.infnet.pb.payments.dto.PaymentEvent;
 import com.edu.infnet.pb.payments.enums.PaymentStatus;
+import com.edu.infnet.pb.payments.producer.PaymentProducer;
 import com.edu.infnet.pb.payments.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +21,7 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository repository;
+    private final PaymentProducer producer;
 
     public PaymentResponse create(PaymentRequest request, UUID userId) {
         var payment = Payment.builder()
@@ -28,7 +32,12 @@ public class PaymentService {
                 .build();
 
         var saved = repository.save(payment);
-        return toResponse(saved);
+        producer.publish(toEvent(saved));
+
+        var processed = process(saved);
+        producer.publish(toEvent(processed));
+
+        return toResponse(processed);
     }
 
     public PaymentResponse findById(UUID id, UUID userId) {
@@ -65,6 +74,14 @@ public class PaymentService {
         return toResponse(repository.save(payment));
     }
 
+    private Payment process(Payment payment) {
+        var status = payment.getAmount().compareTo(new BigDecimal("1000.00")) < 0
+                ? PaymentStatus.APPROVED
+                : PaymentStatus.FAILED;
+        payment.setStatus(status);
+        return repository.save(payment);
+    }
+
     private PaymentResponse toResponse(Payment payment) {
         return new PaymentResponse(
                 payment.getId(),
@@ -77,4 +94,14 @@ public class PaymentService {
         );
     }
 
+    private PaymentEvent toEvent(Payment payment) {
+        return new PaymentEvent(
+                payment.getId(),
+                payment.getUserId(),
+                payment.getAmount(),
+                payment.getMethod(),
+                payment.getStatus(),
+                payment.getUpdatedAt()
+        );
+    }
 }
