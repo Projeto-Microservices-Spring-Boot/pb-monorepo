@@ -1,0 +1,41 @@
+# =============================================================
+# PROFILE DEV — sobrescreve apenas o necessário para rodar
+# fora do Docker (localhost). O resto herda do application.yml.
+# Ativar com: --spring.profiles.active=dev
+# =============================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/store
+    username: admin
+    password: admin
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+
+# Eureka local (se subir eureka via docker compose, manter localhost)
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+# Jaeger local
+otel:
+  exporter:
+    otlp:
+      endpoint: "http://localhost:4318"
+
+# Autenticação simulada para DEV
+app:
+  security:
+    mock-enabled: true
+    mock-user-id: 1
+    mock-user-role: ROLE_ADMIN
+
+logging:
+  level:
+    com.edu.infnet.pb.store: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
