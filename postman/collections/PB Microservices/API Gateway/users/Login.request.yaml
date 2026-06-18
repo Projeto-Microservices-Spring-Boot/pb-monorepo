@@ -1,6 +1,6 @@
 $kind: http-request
 name: Login
-url: "{{gatewayUrl}}/users/public/auth/login"
+url: "{{gatewayUrl}}/users/auth/login"
 method: POST
 body:
   type: json
