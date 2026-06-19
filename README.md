@@ -24,31 +24,34 @@ pb-monorepo/
 ├── .github/                        # Configurações do GitHub e CI/CD
 │   ├── PULL_REQUEST_TEMPLATE/
 │   └── CODEOWNERS
+├── .postman/                       # Config do Postman Agent
 ├── docker/                         # Infraestrutura local
 │   ├── kong/kong.yaml              # Rotas e plugins do API Gateway
 │   ├── postgres/init-databases.sh  # Criação dos bancos
-│   └── prometheus/prometheus.yaml  # Configuração de métricas
+│   ├── prometheus/prometheus.yaml  # Configuração de métricas
+│   └── docker-compose.yaml         # Orquestração dos containers
 ├── docs/                           # Documentações do projeto
 │   ├── clean-architecture/
 │   ├── eureka/
 │   ├── kafka/
 │   ├── kong/
-│   ├── postman/                    # Collection para testar os endpoints
 │   ├── semantic-commits/
 │   ├── swagger/
 │   └── toxiproxy/
 ├── frontend/                       # Frontend da aplicação
+├── postman/                        # Collection de testes dos endpoints
+│   ├── collections/
+│   └── environments/
 ├── services/                       # Microserviços
 │   ├── adm-dashboard/
-│   ├── auth/
 │   ├── community/
 │   ├── eureka-server/              # Discovery Server
 │   ├── geolocalization/
 │   ├── payments/
-│   ├── profile/
+│   ├── shared/                     # Módulo compartilhado (security, jwt)
 │   ├── stickers/
 │   └── store/
-├── docker-compose.yaml             # Orquestração dos containers
+├── pom.xml                         # POM pai do monorepo
 ├── lefthook.yml                    # Hooks de Git (Frontend apenas)
 └── README.md
 ```
@@ -146,6 +149,41 @@ KONG :8000
 2. **Login** → `POST /users/public/auth/login` — valida credenciais, gera um JWT (issuer `frontend`, 5 min) e um `refresh_token`, retorna ambos.
 3. **Rota privada** → `GET /users/perfil` — Kong valida o JWT, repassa ao microsserviço. Spring Security decodifica. Controller recebe via `@AuthenticationPrincipal`.
 4. **Logout** → `POST /auth/logout` — controller extrai o `sub` do JWT e invalida o `refresh_token` no banco.
+
+### Exemplos de requisições
+
+#### Via API Gateway (`http://localhost:8000`)
+
+| Serviço   | Método | Endpoint                              | Auth     | Body                                             |
+|-----------|--------|---------------------------------------|----------|--------------------------------------------------|
+| Users     | POST   | `/auth/register`                      | ❌       | `{"email","password","name"}`                    |
+| Users     | POST   | `/auth/login`                         | ❌       | `{"email","password"}`                           |
+| Users     | GET    | `/me`                                 | Bearer   | —                                                |
+| Users     | POST   | `/auth/logout`                        | Bearer   | —                                                |
+| Payments  | POST   | `/payments`                           | Bearer   | `{"amount","method"}`                            |
+| Payments  | GET    | `/payments/my`                        | Bearer   | —                                                |
+| Payments  | GET    | `/payments/{id}`                      | Bearer   | —                                                |
+| Payments  | PATCH  | `/payments/{id}/cancel`               | Bearer   | —                                                |
+
+#### Direto (sem Kong)
+
+| Serviço   | Método | URL                                          |
+|-----------|--------|----------------------------------------------|
+| Users     | GET    | `http://localhost:8082/actuator/health`      |
+| Payments  | GET    | `http://localhost:8085/actuator/health`      |
+| Users     | POST   | `http://localhost:8082/auth/login`           |
+
+### Kafka
+
+Comunicação assíncrona entre microserviços via tópicos.
+
+#### Tópicos
+
+| Tópico                | Publisher     | Quando é publicado                                                    |
+|-----------------------|---------------|-----------------------------------------------------------------------|
+| `payment.initiated`   | payments      | Pagamento criado com status `PENDING`                                 |
+| `payment.approved`    | payments      | Pagamento processado e aprovado (`amount` < R$ 1.000,00)              |
+| `payment.failed`      | payments      | Pagamento processado e recusado (`amount` >= R$ 1.000,00)             |
 
 ### Observabilidade
 
