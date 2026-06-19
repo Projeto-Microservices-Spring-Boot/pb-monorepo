@@ -87,7 +87,6 @@ services:
         paths:
           - /auth/register
           - /auth/login
-          - /actuator/health
         strip_path: false
         protocols:
           - http
@@ -140,15 +139,12 @@ services:
       - name: stickers
         paths:
           - /stickers
-        strip_path: true
+          - /collections
+          - /trades
+        strip_path: false
         protocols:
           - http
-
-      - name: stickers-docs
-        paths: ["/docs/stickers"]
-        strip_path: true
-        protocols:
-          - http
+          - https
         plugins:
           - name: jwt
             config:
@@ -156,6 +152,12 @@ services:
                 - authorization # Lê o token do header Authorization
               claims_to_verify: [exp] # Verifica se o token não está expirado
               key_claim_name: iss # Usa o campo "iss" do token para identificar o consumer
+
+      - name: stickers-docs
+        paths: ["/docs/stickers"]
+        strip_path: true
+        protocols:
+          - http
 
   - name: store-service
     url: http://store:8088
