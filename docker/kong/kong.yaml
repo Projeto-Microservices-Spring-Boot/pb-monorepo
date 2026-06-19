@@ -62,9 +62,17 @@ services:
       - name: payments
         paths:
           - /payments
-        strip_path: true
+        strip_path: false
         protocols:
           - http
+          - https
+        plugins:
+          - name: jwt
+            config:
+              header_names:
+                - authorization
+              claims_to_verify: [exp]
+              key_claim_name: iss
 
       - name: payments-docs
         paths: ["/docs/payments"]
@@ -79,6 +87,7 @@ services:
         paths:
           - /auth/register
           - /auth/login
+          - /actuator/health
         strip_path: false
         protocols:
           - http
