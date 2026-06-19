@@ -1,0 +1,92 @@
+package com.edu.infnet.pb.stickers.Controller;
+
+import com.edu.infnet.pb.stickers.Dto.AddStickerToCollectionRequest;
+import com.edu.infnet.pb.stickers.Dto.AlbumProgressResponse;
+import com.edu.infnet.pb.stickers.Dto.AvailableQuantityResponse;
+import com.edu.infnet.pb.stickers.Dto.StickerResponse;
+import com.edu.infnet.pb.stickers.Dto.UserCollectionResponse;
+import com.edu.infnet.pb.stickers.Service.StickerCollectionService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@Validated
+@RestController
+@RequestMapping("/collections")
+@RequiredArgsConstructor
+public class StickerCollectionController {
+
+    private final StickerCollectionService collectionService;
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<List<UserCollectionResponse>> findByUserId(@PathVariable UUID userId) {
+        return ResponseEntity.ok(collectionService.findByUserId(userId).stream()
+                .map(UserCollectionResponse::fromEntity)
+                .toList());
+    }
+
+    @GetMapping("/{userId}/stickers/{stickerId}")
+    public ResponseEntity<UserCollectionResponse> findByUserIdAndStickerId(
+            @PathVariable UUID userId,
+            @PathVariable Long stickerId) {
+        return ResponseEntity.ok(UserCollectionResponse.fromEntity(
+                collectionService.findByUserIdAndStickerId(userId, stickerId)));
+    }
+
+    @GetMapping("/{userId}/repeated")
+    public ResponseEntity<List<UserCollectionResponse>> findRepeated(@PathVariable UUID userId) {
+        return ResponseEntity.ok(collectionService.findRepeated(userId).stream()
+                .map(UserCollectionResponse::fromEntity)
+                .toList());
+    }
+
+    @GetMapping("/{userId}/missing")
+    public ResponseEntity<List<StickerResponse>> findMissing(@PathVariable UUID userId) {
+        return ResponseEntity.ok(collectionService.findMissing(userId).stream()
+                .map(StickerResponse::fromEntity)
+                .toList());
+    }
+
+    @GetMapping("/{userId}/progress")
+    public ResponseEntity<AlbumProgressResponse> getAlbumProgress(@PathVariable UUID userId) {
+        return ResponseEntity.ok(AlbumProgressResponse.builder()
+                .ownedStickers(collectionService.countDistinctOwned(userId))
+                .progressPercentage(collectionService.getAlbumProgressPercentage(userId))
+                .build());
+    }
+
+    @GetMapping("/{userId}/stickers/{stickerId}/available-quantity")
+    public ResponseEntity<AvailableQuantityResponse> getAvailableQuantity(
+            @PathVariable UUID userId,
+            @PathVariable Long stickerId) {
+        return ResponseEntity.ok(AvailableQuantityResponse.builder()
+                .stickerId(stickerId)
+                .availableQuantity(collectionService.getAvailableQuantity(userId, stickerId))
+                .build());
+    }
+
+    @PostMapping("/{userId}/stickers")
+    public ResponseEntity<UserCollectionResponse> addSticker(
+            @PathVariable UUID userId,
+            @Valid @RequestBody AddStickerToCollectionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserCollectionResponse.fromEntity(
+                collectionService.addSticker(userId, request.getStickerId(), request.getQuantity())));
+    }
+
+    @DeleteMapping("/{userId}/stickers/{stickerId}")
+    public ResponseEntity<Void> removeSticker(
+            @PathVariable UUID userId,
+            @PathVariable Long stickerId,
+            @RequestParam(defaultValue = "1") @Min(value = 1, message = "A quantidade deve ser maior que zero")
+            int quantity) {
+        collectionService.removeQuantity(userId, stickerId, quantity);
+        return ResponseEntity.noContent().build();
+    }
+}
