@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +28,8 @@ public class StickerCollectionController {
     private final StickerCollectionService collectionService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<UserCollectionResponse>> findByUserId(@PathVariable UUID userId) {
+    public ResponseEntity<List<UserCollectionResponse>> findByUserId(@AuthenticationPrincipal Jwt auth) {
+        UUID userId = UUID.fromString(auth.getSubject());
         return ResponseEntity.ok(collectionService.findByUserId(userId).stream()
                 .map(UserCollectionResponse::fromEntity)
                 .toList());
