@@ -1,4 +1,5 @@
 $kind: collection
+name: PB Microservices
 description: Coleção base para validar os microservices isolados e os mesmos fluxos expostos pelo API Gateway do Kong
 variables:
   gatewayUrl: http://localhost:8000
