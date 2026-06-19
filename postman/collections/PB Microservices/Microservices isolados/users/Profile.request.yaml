@@ -1,9 +1,9 @@
 $kind: http-request
 name: Profile
-url: "{{usersUrl}}/me"
+url: "{{usersurl}}/me"
 method: GET
 auth:
   type: bearer
   credentials:
-    token: eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJmcm9udGVuZCIsIm5hbWUiOiJOYXRoYW5ra2tra2siLCJzdWIiOiJmYjA1ZDNhNC05NzcyLTRmYTUtOTczNC1hNjViODU2MTRmOTIiLCJyb2xlIjoiQlVZRVIiLCJleHAiOjE3ODA2MTE0OTMsImlhdCI6MTc4MDYxMTE5M30.hnJ9WYWG2-sDsRUQB7yHTw02fUvY9FsGsyv6rOeHV6W-QbfeBlxEF8bs30AxPCoSUGe0IQCR5Gqm6UduXqeQ9sC7V3eDx4Qy-HzCFzwJEn4w7mdII9TJezaPy-N3DPaNxxGZBwJpBHZWUlVaxGj_Offha_LfiBqhm1vyEWI5k7KjKdseHD2keu2nMCaQY1RSQ3aRyxnLB3N0GE3NI6hwh88v44VlmyeQGeP5LPJ-L9p22UPcmFVmXc1GLxRx34eLGcFSALJZuVGPq84oHr6VVIytMEva6Sdu7qB-tFYfg19nfzw1OI6V3oX9vLjq6mc8evhPqM2XT9awRWRYrMNQlQ
+    token: "{{authtoken}}"
 order: 4000

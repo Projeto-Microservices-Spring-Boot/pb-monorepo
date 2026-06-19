@@ -1,6 +1,6 @@
 $kind: http-request
-name: Profile
-url: "{{gatewayurl}}/me"
+name: FindMyPayments
+url: "{{gatewayurl}}/payments/my"
 method: GET
 auth:
   type: bearer

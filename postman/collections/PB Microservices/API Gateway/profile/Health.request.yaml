@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{gatewayurl}}/community/actuator/health"
+url: "{{gatewayurl}}/profile/actuator/health"
 method: GET
 headers:
   Accept: application/json

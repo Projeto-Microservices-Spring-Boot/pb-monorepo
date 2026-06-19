@@ -1,8 +1,2 @@
 name: Globals
-values:
-  - key: gatewayUrl
-    value: http://localhost:8000
-    type: default
-  - key: usersUrl
-    value: http://localhost:8082
-    type: default
+values: []

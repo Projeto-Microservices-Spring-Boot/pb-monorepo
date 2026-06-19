@@ -1,7 +1,7 @@
 $kind: http-request
-name: Logout
-url: "{{usersurl}}/auth/logout"
-method: POST
+name: CancelPayment
+url: "{{gatewayurl}}/payments/{{paymentid}}/cancel"
+method: PATCH
 auth:
   type: bearer
   credentials:

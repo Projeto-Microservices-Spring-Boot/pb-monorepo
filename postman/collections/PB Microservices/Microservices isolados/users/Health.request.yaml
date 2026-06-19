@@ -1,10 +1,6 @@
 $kind: http-request
 name: Health
-<<<<<<<< HEAD:postman/collections/PB Microservices/API Gateway/users/Health.request.yaml
-url: "{{gatewayUrl}}/users/actuator/health"
-========
-url: "{{usersUrl}}/actuator/health"
->>>>>>>> origin/develop:postman/collections/PB Microservices/Microservices isolados/users/Health.request.yaml
+url: "{{usersurl}}/actuator/health "
 method: GET
 headers:
   Accept: application/json

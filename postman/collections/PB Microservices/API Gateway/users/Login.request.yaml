@@ -1,14 +1,16 @@
 $kind: http-request
 name: Login
-url: "{{gatewayUrl}}/users/auth/login"
+url: "{{gatewayurl}}/auth/login"
 method: POST
 body:
   type: json
-  content: "{\r
-
-    \    \"email\":\"kong@email.com\",\r
-
-    \    \"password\":\"123456678\"\r
-
-    }"
+  content: "{\r\n\r\n    \"email\":\"kong@email.com\",\r\n\r\n    \"password\":\"123456678\"\r\n\r\n}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const response = pm.response.json();
+      if (response.accessToken) {
+        pm.environment.set("authtoken", response.accessToken);
+      }
+    language: text/javascript
 order: 3000

@@ -1,9 +1,9 @@
 $kind: http-request
 name: Refresh
-url: "{{gatewayUrl}}/users/auth/refresh"
+url: "{{gatewayurl}}/auth/refresh"
 method: POST
 auth:
   type: bearer
   credentials:
-    token: eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJmcm9udGVuZCIsIm5hbWUiOiJrb25nIGFwaSIsInN1YiI6ImZiMGExYTA0LWQ0ZWQtNDMzOS04MWEwLWQ0ZThlYjRkYTc0MyIsInJvbGUiOiJCVVlFUiIsImV4cCI6MTc4MDY5NDgwMywiaWF0IjoxNzgwNjk0NTAzfQ.AwA4f5tKyGVfBCg0wMwZ2j_1veGPowD6atwtY3CUKwAX9bgI1U-MaedKUzErtolVI_HeUW6ZhN3c3CCpgEBHFhXzJlyUeOS9R5miGZpaklyezpg063tzD8Omda0_J5gIlDaI1ltbFhYX19mcCGvZ0XjtIUJEDaTQQmzkHcarns9X861rZFq9iP2tN26dLsX8S0ULp5qO8pKmfrhtaRnfyVsLn_IsLF-X0fGqtnCZk9N3CD02dSjMUdpCQs-GTZophdfDaoEpDJNhiXECD2JyopUkiqHRDVqWqEQbccAMAG8xFbM2C1k-j8kWO6UkzhUZ54F5CP5zv2dlGol0vTD6Yg
+    token: "{{authtoken}}"
 order: 3962155275865275

@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{stickersUrl}}/actuator/health"
+url: "{{stickersurl}}/actuator/health"
 method: GET
 headers:
   Accept: application/json

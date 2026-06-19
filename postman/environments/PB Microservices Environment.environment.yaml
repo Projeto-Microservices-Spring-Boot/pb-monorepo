@@ -1,0 +1,24 @@
+name: PB Microservices Environment
+values:
+  - key: gatewayurl
+    value: 'http://localhost:8000'
+  - key: eurekaurl
+    value: 'http://localhost:8761'
+  - key: addashboardurl
+    value: 'http://localhost:8081'
+  - key: usersurl
+    value: 'http://localhost:8082'
+  - key: communityurl
+    value: 'http://localhost:8083'
+  - key: geolocalizationurl
+    value: 'http://localhost:8084'
+  - key: paymentsurl
+    value: 'http://localhost:8085'
+  - key: stickersurl
+    value: 'http://localhost:8087'
+  - key: storeurl
+    value: 'http://localhost:8088'
+  - key: paymentid
+    value: ''
+  - key: authtoken
+    value: ''

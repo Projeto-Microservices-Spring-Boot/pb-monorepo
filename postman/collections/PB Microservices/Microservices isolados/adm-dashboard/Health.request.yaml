@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{admDashboardUrl}}/actuator/health"
+url: "{{addashboardurl}}/actuator/health"
 method: GET
 headers:
   Accept: application/json

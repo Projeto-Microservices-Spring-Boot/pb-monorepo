@@ -1,9 +1,9 @@
 $kind: http-request
-name: Profile
-url: "{{gatewayurl}}/me"
+name: FindPaymentById
+url: "{{gatewayurl}}/payments/{{paymentid}}"
 method: GET
 auth:
   type: bearer
   credentials:
     token: "{{authtoken}}"
-order: 4000
+order: 3000
