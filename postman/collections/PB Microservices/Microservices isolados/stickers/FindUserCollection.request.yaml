@@ -1,0 +1,9 @@
+$kind: http-request
+name: FindUserCollection
+url: "{{stickersurl}}/collections/{{userid}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 3100

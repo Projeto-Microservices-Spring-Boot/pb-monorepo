@@ -35,4 +35,7 @@ variables:
   - key: authtoken
     value: ""
     type: string
+  - key: userid
+    value: ""
+    type: string
 

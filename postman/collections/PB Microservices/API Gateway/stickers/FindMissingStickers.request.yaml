@@ -1,0 +1,9 @@
+$kind: http-request
+name: FindMissingStickers
+url: "{{gatewayurl}}/stickers/collections/{{userid}}/missing"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 3300

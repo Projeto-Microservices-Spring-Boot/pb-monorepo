@@ -22,3 +22,5 @@ values:
     value: ''
   - key: authtoken
     value: ''
+  - key: userid
+    value: ''

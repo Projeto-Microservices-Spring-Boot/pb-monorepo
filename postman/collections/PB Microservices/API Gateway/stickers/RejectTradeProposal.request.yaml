@@ -1,0 +1,9 @@
+$kind: http-request
+name: RejectTradeProposal
+url: "{{gatewayurl}}/stickers/trades/1/reject?receiverId={{userid}}"
+method: PATCH
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 4300
