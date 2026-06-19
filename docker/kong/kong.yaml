@@ -95,6 +95,13 @@ services:
         protocols:
           - http
         strip_path: true
+        plugins:
+          - name: jwt
+            config:
+              header_names:
+                - authorization # Lê o token do header Authorization
+              claims_to_verify: [exp] # Verifica se o token não está expirado
+              key_claim_name: iss # Usa o campo "iss" do token para identificar o consumer
 
   - name: store-service
     url: http://store:8088
