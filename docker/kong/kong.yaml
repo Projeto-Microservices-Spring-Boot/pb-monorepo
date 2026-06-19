@@ -77,8 +77,9 @@ services:
     routes:
       - name: users.public
         paths:
-          - /users
-        strip_path: true
+          - /auth/register
+          - /auth/login
+        strip_path: false
         protocols:
           - http
           - https
@@ -97,7 +98,7 @@ services:
         paths:
           - /auth/logout
           - /me
-        strip_path: true
+        strip_path: false
         protocols:
           - http
           - https
