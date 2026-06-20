@@ -86,6 +86,7 @@ services:
       - name: users.public
         paths:
           - /auth/register
+          - /auth/register/seller
           - /auth/login
         strip_path: false
         protocols:
