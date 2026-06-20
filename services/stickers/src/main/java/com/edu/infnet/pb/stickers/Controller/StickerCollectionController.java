@@ -25,7 +25,6 @@ import com.edu.infnet.pb.stickers.Dto.StickerResponse;
 import com.edu.infnet.pb.stickers.Dto.UserCollectionResponse;
 import com.edu.infnet.pb.stickers.Service.StickerCollectionService;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -34,80 +33,98 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/collections")
 @RequiredArgsConstructor
 public class StickerCollectionController {
+
   private static final Logger log = LogManager.getLogger(StickerCollectionController.class);
+
   private final StickerCollectionService collectionService;
 
-  @GetMapping("/me")
-  public ResponseEntity<List<UserCollectionResponse>> findByUserId(@AuthenticationPrincipal Jwt auth,
-      HttpServletRequest request) {
-    log.info("=== HEADERS DO KONG ===");
-    log.info("X-Consumer-Username: {}", request.getHeader("X-Consumer-Username"));
-    log.info("X-Credential-Identifier: {}", request.getHeader("X-Credential-Identifier"));
-    log.info("X-Consumer-ID: {}", request.getHeader("X-Consumer-ID"));
-    log.info("Authorization: {}", request.getHeader("Authorization"));
+  /**
+   * Extrai o userId a partir do "sub" do JWT já validado pelo Spring Security
+   * (Resource Server configurado com JwtDecoder). Centralizado aqui para não
+   * repetir UUID.fromString(auth.getSubject()) em cada método do controller.
+   */
+  private UUID currentUserId(Jwt auth) {
+    return UUID.fromString(auth.getSubject());
+  }
 
-    UUID userId = UUID.fromString(auth.getSubject());
+  @GetMapping("/album")
+  public ResponseEntity<List<UserCollectionResponse>> findMyCollection(@AuthenticationPrincipal Jwt auth) {
+    UUID userId = currentUserId(auth);
+
     var result = collectionService.findByUserId(userId).stream()
-        .map(UserCollectionResponse::fromEntity)
-        .toList();
+            .map(UserCollectionResponse::fromEntity)
+            .toList();
 
-    log.info("RESULTADO: ", result);
     return ResponseEntity.ok(result);
   }
 
-  @GetMapping("/{userId}/stickers/{stickerId}")
-  public ResponseEntity<UserCollectionResponse> findByUserIdAndStickerId(
-      @PathVariable UUID userId,
-      @PathVariable Long stickerId) {
+  @GetMapping("/album/{stickerId}")
+  public ResponseEntity<UserCollectionResponse> findByStickerId(
+          @AuthenticationPrincipal Jwt auth,
+          @PathVariable Long stickerId) {
+    UUID userId = currentUserId(auth);
+
     return ResponseEntity.ok(UserCollectionResponse.fromEntity(
-        collectionService.findByUserIdAndStickerId(userId, stickerId)));
+            collectionService.findByUserIdAndStickerId(userId, stickerId)));
   }
 
-  @GetMapping("/{userId}/repeated")
-  public ResponseEntity<List<UserCollectionResponse>> findRepeated(@PathVariable UUID userId) {
+  @GetMapping("/repeated")
+  public ResponseEntity<List<UserCollectionResponse>> findRepeated(@AuthenticationPrincipal Jwt auth) {
+    UUID userId = currentUserId(auth);
+
     return ResponseEntity.ok(collectionService.findRepeated(userId).stream()
-        .map(UserCollectionResponse::fromEntity)
-        .toList());
+            .map(UserCollectionResponse::fromEntity)
+            .toList());
   }
 
-  @GetMapping("/{userId}/missing")
-  public ResponseEntity<List<StickerResponse>> findMissing(@PathVariable UUID userId) {
+  @GetMapping("/missing")
+  public ResponseEntity<List<StickerResponse>> findMissing(@AuthenticationPrincipal Jwt auth) {
+    UUID userId = currentUserId(auth);
+
     return ResponseEntity.ok(collectionService.findMissing(userId).stream()
-        .map(StickerResponse::fromEntity)
-        .toList());
+            .map(StickerResponse::fromEntity)
+            .toList());
   }
 
-  @GetMapping("/{userId}/progress")
-  public ResponseEntity<AlbumProgressResponse> getAlbumProgress(@PathVariable UUID userId) {
+  @GetMapping("/progress")
+  public ResponseEntity<AlbumProgressResponse> getAlbumProgress(@AuthenticationPrincipal Jwt auth) {
+    UUID userId = currentUserId(auth);
+
     return ResponseEntity.ok(AlbumProgressResponse.builder()
-        .ownedStickers(collectionService.countDistinctOwned(userId))
-        .progressPercentage(collectionService.getAlbumProgressPercentage(userId))
-        .build());
+            .ownedStickers(collectionService.countDistinctOwned(userId))
+            .progressPercentage(collectionService.getAlbumProgressPercentage(userId))
+            .build());
   }
 
-  @GetMapping("/{userId}/stickers/{stickerId}/available-quantity")
+  @GetMapping("/album/{stickerId}/available-quantity")
   public ResponseEntity<AvailableQuantityResponse> getAvailableQuantity(
-      @PathVariable UUID userId,
-      @PathVariable Long stickerId) {
+          @AuthenticationPrincipal Jwt auth,
+          @PathVariable Long stickerId) {
+    UUID userId = currentUserId(auth);
+
     return ResponseEntity.ok(AvailableQuantityResponse.builder()
-        .stickerId(stickerId)
-        .availableQuantity(collectionService.getAvailableQuantity(userId, stickerId))
-        .build());
+            .stickerId(stickerId)
+            .availableQuantity(collectionService.getAvailableQuantity(userId, stickerId))
+            .build());
   }
 
-  @PostMapping("/{userId}/stickers")
+  @PostMapping("/album")
   public ResponseEntity<UserCollectionResponse> addSticker(
-      @PathVariable UUID userId,
-      @Valid @RequestBody AddStickerToCollectionRequest request) {
+          @AuthenticationPrincipal Jwt auth,
+          @Valid @RequestBody AddStickerToCollectionRequest request) {
+    UUID userId = currentUserId(auth);
+
     return ResponseEntity.status(HttpStatus.CREATED).body(UserCollectionResponse.fromEntity(
-        collectionService.addSticker(userId, request.getStickerId(), request.getQuantity())));
+            collectionService.addSticker(userId, request.getStickerId(), request.getQuantity())));
   }
 
-  @DeleteMapping("/{userId}/stickers/{stickerId}")
+  @DeleteMapping("/album/{stickerId}")
   public ResponseEntity<Void> removeSticker(
-      @PathVariable UUID userId,
-      @PathVariable Long stickerId,
-      @RequestParam(defaultValue = "1") @Min(value = 1, message = "A quantidade deve ser maior que zero") int quantity) {
+          @AuthenticationPrincipal Jwt auth,
+          @PathVariable Long stickerId,
+          @RequestParam(defaultValue = "1") @Min(value = 1, message = "A quantidade deve ser maior que zero") int quantity) {
+    UUID userId = currentUserId(auth);
+
     collectionService.removeQuantity(userId, stickerId, quantity);
     return ResponseEntity.noContent().build();
   }
