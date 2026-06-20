@@ -1,26 +1,29 @@
-FROM eclipse-temurin:25-jdk-alpine AS deps
-
-RUN apk add --no-cache maven
-RUN apk add --no-cache curl
-
-WORKDIR /build
-
-COPY  pom.xml .
-
-RUN mvn dependency:go-offline -B
-
-FROM deps AS build
-
+FROM eclipse-temurin:25-jdk-alpine AS builder
+WORKDIR /app
+COPY pom.xml .
 COPY src ./src
 
-RUN mvn clean package -DskipTests 
+RUN apk add --no-cache maven && \
+    mvn -B dependency:go-offline -q && \
+    mvn -B package -Dmaven.test.skip=true -q
 
-FROM  eclipse-temurin:25-jre-alpine AS run
-
+FROM eclipse-temurin:25-jre-alpine AS runtime
 WORKDIR /app
 
-COPY --from=build /build/target/*.jar app.jar
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-EXPOSE 8083
+COPY --from=builder /app/target/community-service-*.jar app.jar
 
-CMD [ "java" , "-jar", "app.jar" ]
+RUN chown appuser:appgroup app.jar
+USER appuser
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- http://localhost:8080/actuator/health/liveness || exit 1
+
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]
