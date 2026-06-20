@@ -9,10 +9,9 @@ import lombok.Setter;
 @Setter
 public class AddStickerToCollectionRequest {
 
-    @NotNull(message = "O id da sticker e obrigatorio")
+
     private Long stickerId;
 
-    @NotNull(message = "A quantidade e obrigatoria")
-    @Min(value = 1, message = "A quantidade deve ser maior que zero")
+
     private Integer quantity;
 }
