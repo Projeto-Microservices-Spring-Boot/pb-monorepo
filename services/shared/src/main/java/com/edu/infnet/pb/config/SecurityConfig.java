@@ -38,6 +38,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/auth/register/seller").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                     .anyRequest().authenticated())
             .httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable())

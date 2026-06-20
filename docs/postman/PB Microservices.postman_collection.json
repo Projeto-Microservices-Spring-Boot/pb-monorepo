@@ -682,6 +682,22 @@
               }
             },
             {
+              "name": "RegisterSeller",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"email\":\"seller@email.com\",\n\n    \"password\":\"123456678\",\n\n    \"name\":\"Seller Kong\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/auth/register/seller",
+                  "host": ["{{gatewayurl}}"],
+                  "path": ["auth", "register", "seller"]
+                }
+              }
+            },
+            {
               "name": "Login",
               "event": [
                 {
@@ -1461,6 +1477,22 @@
                   "raw": "{{usersurl}}/auth/register",
                   "host": ["{{usersurl}}"],
                   "path": ["auth", "register"]
+                }
+              }
+            },
+            {
+              "name": "RegisterSeller",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"email\":\"seller_isolado@email.com\",\n\n    \"password\":\"123456678\",\n\n    \"name\":\"Seller Isolado\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{usersurl}}/auth/register/seller",
+                  "host": ["{{usersurl}}"],
+                  "path": ["auth", "register", "seller"]
                 }
               }
             },
