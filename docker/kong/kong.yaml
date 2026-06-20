@@ -1,94 +1,215 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  Kong API Gateway — Declarative Configuration (DB-less mode)                 ║
+# ║  Proxy: http://localhost:8000 | Admin: http://localhost:8001                 ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
 _format_version: "3.0"
 
-# TODO => separar as rotas públicas e privadas de cada microservice e adicionar plugin JWT onde necessário,
-# TODO => configurar o plugin de  rate limit onde necessário,
-
+# ══════════════════════════════════════════════════════════════════════════════
+# Services
+# ══════════════════════════════════════════════════════════════════════════════
 services:
   - name: adm-dashboard-service
     url: http://adm-dashboard:8081
     routes:
-      - name: adm-dashboard-routes
-        paths: ["/adm-dashboard"]
+      - name: adm-dashboard
+        paths:
+          - /adm
+        strip_path: true
         protocols:
           - http
+
+      - name: adm-dashboard-docs
+        paths: ["/docs/adm-dashboard"]
         strip_path: true
+        protocols:
+          - http
 
   - name: community-service
     url: http://community:8083
     routes:
-      - name: community-routes
-        paths: ["/community"]
+      - name: community
+        paths:
+          - /community
+        strip_path: true
         protocols:
           - http
-        strip_path: true
 
-  - name: geolocalization-service
+      - name: community-docs
+        paths: ["/docs/community"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: geolocalization
     url: http://geolocalization:8084
     routes:
       - name: geolocalization-routes
-        paths: ["/geolocalization"]
+        paths:
+          - /geolocalization
+        strip_path: true
         protocols:
           - http
+
+      - name: geolocalization-docs
+        paths: ["/docs/geolocalization"]
         strip_path: true
+        protocols:
+          - http
 
   - name: payments-service
     url: http://payments:8085
     routes:
-      - name: payments-routes
-        paths: ["/payments"]
-        protocols:
-          - http
-        strip_path: true
-
-  - name: users-service
-    url: http://users:8082
-    routes:
-      - name: users-public-routes
+      - name: payments
         paths:
-          - /users/public # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
+          - /payments
+        strip_path: false
         protocols:
           - http
-        strip_path: true
-
-      - name: users-private-routes
-        paths:
-          - /users/private # nome provisório para o path, provavelmente será apenas o nome do endpoint mesmo!
-        protocols:
-          - http
+          - https
         plugins:
           - name: jwt
             config:
               header_names:
                 - authorization
-              claims_to_verify:
-                - exp
-                - nbf
+              claims_to_verify: [exp]
+              key_claim_name: iss
+
+      - name: payments-docs
+        paths: ["/docs/payments"]
+        strip_path: true
+        protocols:
+          - http
+
+  - name: users-service
+    url: http://users:8082
+    routes:
+      - name: users.public
+        paths:
+          - /auth/register
+          - /auth/login
+        strip_path: false
+        protocols:
+          - http
+          - https
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 2 # ⏱️ Máx. 2 requests por segundo
+              minute: 15 # Máx. 15 por minuto
+              hour: 50 # 🕐 Máx. 100 por hora
+              policy: local # Contadores em memória local de cada nó
+              limit_by: ip # Limita pelo IP do cliente
+              hide_client_headers: true # Oculta headers X-RateLimit-*
+            enabled: true
+
+      - name: users.private
+        paths:
+          - /auth/logout
+          - /me
+        strip_path: false
+        protocols:
+          - http
+          - https
+        plugins:
+          - name: jwt
+            config:
+              header_names:
+                - authorization # Lê o token do header Authorization
+              claims_to_verify: [exp] # Verifica se o token não está expirado
+              key_claim_name: iss # Usa o campo "iss" do token para identificar o consumer
+
+          - name: rate-limiting
+            config:
+              second: 5 # ⏱️ Máx. 5 requests por segundo
+              minute: 50 # Máx. 50 por minuto
+              hour: 150 # 🕐 Máx. 150 por hora
+              policy: local # Contadores em memória local de cada nó
+              limit_by: consumer # Limita pelo consumer (rotas com auth)
+            enabled: true
+
+      - name: users-docs
+        paths: ["/docs/users"]
+        strip_path: true
+        protocols:
+          - http
 
   - name: stickers-service
     url: http://stickers:8087
     routes:
-      - name: stickers-routes
-        paths: ["/stickers"]
+      - name: stickers
+        paths:
+          - /stickers
+          - /collections
+          - /trades
+        strip_path: false
         protocols:
           - http
+          - https
+        plugins:
+          - name: jwt
+            config:
+              header_names:
+                - authorization # Lê o token do header Authorization
+              claims_to_verify: [exp] # Verifica se o token não está expirado
+              key_claim_name: iss # Usa o campo "iss" do token para identificar o consumer
+
+      - name: stickers-docs
+        paths: ["/docs/stickers"]
         strip_path: true
+        protocols:
+          - http
 
   - name: store-service
     url: http://store:8088
     routes:
-      - name: store-routes
-        paths: ["/store"]
+      - name: store
+        paths:
+          - /store
+        strip_path: true
         protocols:
           - http
-        strip_path: true
 
+      - name: store-docs
+        paths: ["/docs/store"]
+        strip_path: true
+        protocols:
+          - http
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # Swagger UI — Interface unificada de documentação
+  # ══════════════════════════════════════════════════════════════════════════════
+  - name: docs-ui
+    url: http://swagger-ui:8080
+    routes:
+      - name: docs-ui
+        paths: ["/docs"]
+        strip_path: true
+        protocols:
+          - http
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Consumers — Identidades para autenticação JWT
+# ══════════════════════════════════════════════════════════════════════════════
 consumers:
   - username: frontend
     jwt_secrets:
-      - key: my-frontend
-        secret: segredo-super-secreto # usar variável de ambiente
-        algorithm: HS256
+      - key: frontend # Deve corresponder ao valor do campo "iss" no token JWT
+        secret: dummy-value
+        algorithm: RS256
+        rsa_public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3Ga1oA1tdI+l62JKjqX9
+          1a6MMNykFCssfZjaWex5Zx5ndc+IqqieVpRHDkqfoNnNm8u96ENeC776iWZ3k6q1
+          WcI1qAyuzHYEWqoPJWKwBHAqGmqKCeSnRqzQZxcSNFX9U4nYCSJ0CZ4vq6TsNr07
+          pdjx4GFn3HOU1CDfd8s4J8tnSCwtKtU/gFYb0IPQoHLh6DaV4X/QYnTnHSuBcZPT
+          U6UWnQWqu1AbBF5UxfU93U2gR3uoy0pqUd8qQjW0Eh/uWz/HWtqFszZ1WD9mCe7L
+          WEMIcspZpTc0GHOMy0o0l4FRc7Q6zPq+5/llJgem9S74Hz8EBX7+GEJ9Jhvv8HiI
+          ewIDAQAB
+          -----END PUBLIC KEY-----
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Global Plugins — Aplicados a TODAS as rotas
+# ══════════════════════════════════════════════════════════════════════════════
 plugins:
   - name: prometheus
     config:
@@ -102,5 +223,17 @@ plugins:
     config:
       origins:
         - "http://localhost:3000" # frontend (dev)
-      methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
-      headers: [Accept, Content-Type, Authorization]
+      credentials: true # Necessário para header Authorization funcionar no browser
+      max_age: 3600 # Cache do preflight por 1 hora
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Content-Type
+        - Authorization
+        - X-Request-Id

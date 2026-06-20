@@ -24,31 +24,34 @@ pb-monorepo/
 ├── .github/                        # Configurações do GitHub e CI/CD
 │   ├── PULL_REQUEST_TEMPLATE/
 │   └── CODEOWNERS
+├── .postman/                       # Config do Postman Agent
 ├── docker/                         # Infraestrutura local
 │   ├── kong/kong.yaml              # Rotas e plugins do API Gateway
 │   ├── postgres/init-databases.sh  # Criação dos bancos
-│   └── prometheus/prometheus.yaml  # Configuração de métricas
+│   ├── prometheus/prometheus.yaml  # Configuração de métricas
+│   └── docker-compose.yaml         # Orquestração dos containers
 ├── docs/                           # Documentações do projeto
 │   ├── clean-architecture/
 │   ├── eureka/
 │   ├── kafka/
 │   ├── kong/
-│   ├── postman/                    # Collection para testar os endpoints
 │   ├── semantic-commits/
 │   ├── swagger/
 │   └── toxiproxy/
 ├── frontend/                       # Frontend da aplicação
+├── postman/                        # Collection de testes dos endpoints
+│   ├── collections/
+│   └── environments/
 ├── services/                       # Microserviços
 │   ├── adm-dashboard/
-│   ├── auth/
 │   ├── community/
 │   ├── eureka-server/              # Discovery Server
 │   ├── geolocalization/
 │   ├── payments/
-│   ├── profile/
+│   ├── shared/                     # Módulo compartilhado (security, jwt)
 │   ├── stickers/
 │   └── store/
-├── docker-compose.yaml             # Orquestração dos containers
+├── pom.xml                         # POM pai do monorepo
 ├── lefthook.yml                    # Hooks de Git (Frontend apenas)
 └── README.md
 ```
@@ -80,13 +83,107 @@ O Eureka é utilizado para permitir que os diversos microsserviços se conectem 
 
 O Kong API Gateway centraliza o acesso aos microservices. No `docker-compose.yaml`, ele sobe em modo DB-less, carregando a configuração declarativa definida em `docker/kong/kong.yaml`. A interface administrativa fica em <http://localhost:8002>, a Admin API em <http://localhost:8001> e o proxy HTTP em <http://localhost:8000>. Para acessar um microservice, use a rota correspondente no proxy, por exemplo `http://localhost:8000/auth`, `http://localhost:8000/store` ou `http://localhost:8000/payments`.
 
+O Kong também gerencia a autenticação via plugin JWT: rotas públicas (ex: `/users/public`) não exigem token, enquanto rotas privadas (ex: `/users/`) exigem um JWT válido assinado com RSA256. O consumer `frontend` possui a chave pública para validação. O fluxo completo de autenticação (registro, login, logout) está detalhado em [Fluxo de autenticação via Kong](#fluxo-de-autenticação-via-kong).
+
 As portas expostas são:
 
-| Nome | Responsabilidade | Porta        |
-| ---- | ---------------- | ------------ |
-| Kong | API Gateway      | 8001 (UI)    |
-| Kong | API Gateway      | 8002 (ADMIN) |
-| Kong | API Gateway      | 8000 (Proxy) |
+| Nome | Responsabilidade | Porta            |
+| ---- | ---------------- | ---------------- |
+| Kong | API Gateway      | 8000 (Proxy)     |
+| Kong | API Gateway      | 8001 (Admin API) |
+| Kong | API Gateway      | 8002 (Admin UI)  |
+
+#### Fluxo de autenticação via Kong
+
+Abaixo, a jornada de uma requisição autenticada desde o frontend até o controller, passando pelo Kong e pelo Spring Security:
+
+```txt
+FRONTEND
+   │
+   │ POST /rota (ex: /users)
+   │ Authorization: Bearer <JWT>
+   │
+   ▼
+KONG :8000
+   │
+   │ plugin jwt valida assinatura RSA256
+   │
+   ├── inválido ──────────────────────> 401 ──> FRONTEND
+   │
+   └── válido ──> repassa 0 mesmo JWT p/ QUALQUER microservice
+                                                              │
+                                                              │
+                                                              │
+                                                              │
+                                                              │
+                                                              ▼
+                                                        MICROSSERVIÇO DESTINO
+                                                              │
+                                                              │ Spring Security decodifica JWT
+                                                              │ popula SecurityContext
+                                                              │
+                                                              ▼
+                                                        CONTROLLER
+                                                              │
+                                                              │ @AuthenticationPrincipal Jwt jwt
+                                                              │ jwt.getSubject(), jwt.getClaim("name"), etc.
+                                                              │
+                                                              ▼
+                                                        RESPOSTA HTTP
+                                                              │
+                                                              ▼
+                                                        FRONTEND
+```
+
+**O papel de cada camada:**
+
+| Camada                       | Responsabilidade                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Kong** (proxy)             | Ao identificar que a rota é `/users/` (privada), ativa o plugin `jwt`. Lê o header `Authorization: Bearer <token>`, valida a assinatura RSA256 contra a chave pública do consumer `frontend` e checa a expiração (`exp`). Se inválido → `401`. Se válido → **repassa a requisição ao microsserviço com o header `Authorization` original intacto**. Kong não decodifica nem modifica o payload do JWT. |
+| **Spring Security** (filtro) | Configurado via `oauth2ResourceServer().jwt()`, intercepta o header `Authorization` na chegada ao microsserviço, **decodifica** o JWT usando a `JwtDecoder` (chave pública RSA) e popula o `SecurityContext` com o objeto `Jwt` autenticado.                                                                                                                                                           |
+| **Controller** (método)      | Recebe o JWT já decodificado via `@AuthenticationPrincipal Jwt jwt`. Acessa `jwt.getSubject()` (UUID do usuário), `jwt.getClaim("name")`, `jwt.getClaim("role")` sem precisar extrair ou decodificar nada manualmente.                                                                                                                                                                                 |
+
+**Fluxo resumido:**
+
+1. **Registro** → `POST /users/public/auth/register` — rota pública (sem plugin jwt), cria o usuário no banco.
+2. **Login** → `POST /users/public/auth/login` — valida credenciais, gera um JWT (issuer `frontend`, 5 min) e um `refresh_token`, retorna ambos.
+3. **Rota privada** → `GET /users/perfil` — Kong valida o JWT, repassa ao microsserviço. Spring Security decodifica. Controller recebe via `@AuthenticationPrincipal`.
+4. **Logout** → `POST /auth/logout` — controller extrai o `sub` do JWT e invalida o `refresh_token` no banco.
+
+### Exemplos de requisições
+
+#### Via API Gateway (`http://localhost:8000`)
+
+| Serviço   | Método | Endpoint                              | Auth     | Body                                             |
+|-----------|--------|---------------------------------------|----------|--------------------------------------------------|
+| Users     | POST   | `/auth/register`                      | ❌       | `{"email","password","name"}`                    |
+| Users     | POST   | `/auth/login`                         | ❌       | `{"email","password"}`                           |
+| Users     | GET    | `/me`                                 | Bearer   | —                                                |
+| Users     | POST   | `/auth/logout`                        | Bearer   | —                                                |
+| Payments  | POST   | `/payments`                           | Bearer   | `{"amount","method"}`                            |
+| Payments  | GET    | `/payments/my`                        | Bearer   | —                                                |
+| Payments  | GET    | `/payments/{id}`                      | Bearer   | —                                                |
+| Payments  | PATCH  | `/payments/{id}/cancel`               | Bearer   | —                                                |
+
+#### Direto (sem Kong)
+
+| Serviço   | Método | URL                                          |
+|-----------|--------|----------------------------------------------|
+| Users     | GET    | `http://localhost:8082/actuator/health`      |
+| Payments  | GET    | `http://localhost:8085/actuator/health`      |
+| Users     | POST   | `http://localhost:8082/auth/login`           |
+
+### Kafka
+
+Comunicação assíncrona entre microserviços via tópicos.
+
+#### Tópicos
+
+| Tópico                | Publisher     | Quando é publicado                                                    |
+|-----------------------|---------------|-----------------------------------------------------------------------|
+| `payment.initiated`   | payments      | Pagamento criado com status `PENDING`                                 |
+| `payment.approved`    | payments      | Pagamento processado e aprovado (`amount` < R$ 1.000,00)              |
+| `payment.failed`      | payments      | Pagamento processado e recusado (`amount` >= R$ 1.000,00)             |
 
 ### Observabilidade
 
@@ -117,11 +214,12 @@ As portas expostas são:
 **Pré-requisitos:** **Java 25** e **Docker & Docker Compose**
 
 ```bash
-# clone o repositório do projeto
+# Clone o repositório do projeto
 git clone https://github.com/Projeto-Microservices-Spring-Boot/pb-monorepo.git
+
+# Acessa pasta onde estão os arquivos relacionados ao Docker
+cd docker
 
 # Sobe tudo (infra + serviços + frontend)
 docker compose up --build
 ```
-
-## Exemplos de requisições ( A fazer)

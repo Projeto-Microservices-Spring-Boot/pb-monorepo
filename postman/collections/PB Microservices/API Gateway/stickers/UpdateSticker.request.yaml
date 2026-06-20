@@ -1,0 +1,32 @@
+$kind: http-request
+name: UpdateSticker
+url: "{{gatewayurl}}/stickers/1"
+method: PUT
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+body:
+  type: json
+  content: "{\r
+
+    \r
+
+    \    \"stickerCode\": \"BRA-01\",\r
+
+    \r
+
+    \    \"name\": \"Neymar Silva Jr\",\r
+
+    \r
+
+    \    \"team\": \"Brasil\",\r
+
+    \r
+
+    \    \"type\": \"PLAYER_STICKER\"\r
+
+    \r
+
+    }"
+order: 2400

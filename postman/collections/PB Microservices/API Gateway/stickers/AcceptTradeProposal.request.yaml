@@ -1,0 +1,12 @@
+$kind: http-request
+name: AcceptTradeProposal
+url: "{{gatewayurl}}/stickers/trades/1/accept?receiverId={{userid}}"
+method: PATCH
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+body:
+  type: json
+  content: "{\r\n\r\n    \"meetingLocation\": \"Praça Central\",\r\n\r\n    \"meetingAt\": \"2026-06-20T15:00:00\"\r\n\r\n}"
+order: 4200

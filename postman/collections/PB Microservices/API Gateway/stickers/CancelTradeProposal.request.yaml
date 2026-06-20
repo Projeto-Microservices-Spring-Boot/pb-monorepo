@@ -1,0 +1,9 @@
+$kind: http-request
+name: CancelTradeProposal
+url: "{{gatewayurl}}/stickers/trades/1/cancel?userId={{userid}}"
+method: PATCH
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 4400

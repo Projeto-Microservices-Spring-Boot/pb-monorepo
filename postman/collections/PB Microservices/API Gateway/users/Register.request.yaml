@@ -1,0 +1,8 @@
+$kind: http-request
+name: Register
+url: "{{gatewayurl}}/auth/register"
+method: POST
+body:
+  type: json
+  content: "{\r\n\r\n    \"email\":\"kong@email.com\",\r\n\r\n    \"password\":\"123456678\",\r\n\r\n    \"name\":\"kong api\"\r\n\r\n}"
+order: 2000

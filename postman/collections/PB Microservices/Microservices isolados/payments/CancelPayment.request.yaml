@@ -1,0 +1,9 @@
+$kind: http-request
+name: CancelPayment
+url: "{{paymentsurl}}/payments/{{paymentid}}/cancel"
+method: PATCH
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 5000

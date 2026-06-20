@@ -1,0 +1,9 @@
+$kind: http-request
+name: FindMyPayments
+url: "{{paymentsurl}}/payments/my"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 4000

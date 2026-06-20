@@ -1,13 +1,36 @@
 import axios from 'axios';
 import { env } from '@/infra/env/client';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
+import type {
+  AxiosError,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
+} from 'axios';
+import { useAuthStore } from '../stores/useAuth.store';
 
 const BASE_URL = env.NEXT_PUBLIC_API_URL;
 
 const api = axios.create({
   baseURL: BASE_URL,
 });
+
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const accessToken = useAuthStore.getState().accessToken;
+  if (accessToken) {
+    config.headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      useAuthStore.getState().logout();
+    }
+    return Promise.reject(error);
+  },
+);
 
 export const OrvalMutator = async <TResponse, TBody = unknown>({
   url,

@@ -1,0 +1,9 @@
+$kind: http-request
+name: DeleteSticker
+url: "{{gatewayurl}}/stickers/1"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 2500

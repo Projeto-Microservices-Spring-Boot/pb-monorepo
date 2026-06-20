@@ -1,0 +1,12 @@
+$kind: http-request
+name: AddStickerToCollection
+url: "{{stickersurl}}/collections/{{userid}}/stickers"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+body:
+  type: json
+  content: "{\r\n\r\n    \"stickerId\": 1,\r\n\r\n    \"quantity\": 2\r\n\r\n}"
+order: 3000
