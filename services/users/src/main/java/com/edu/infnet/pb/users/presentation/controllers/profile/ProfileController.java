@@ -26,6 +26,7 @@ public class ProfileController implements ProfileControllerDocs {
   /*
    * @AuthenticationPrincipal Jwt => O Spring Security injeta o token JWT decoded
    */
+  @Override
   @GetMapping("/me")
   public ResponseEntity<ProfileResponseDto> getProfile(@AuthenticationPrincipal Jwt jwt, HttpServletRequest request) {
     log.info("=== HEADERS DO KONG ===");
