@@ -1,0 +1,12 @@
+$kind: http-request
+name: Get Feed
+url: "{{gatewayurl}}/posts?page=0&size=20"
+method: GET
+queryParams:
+  page: "0"
+  size: "20"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJmcm9udGVuZCIsIm5hbWUiOiJOYXRhbktLS0tLS0tLS0tLS0tLIiwic3ViIjoiOTk0Nzk3MWMtNGMwNy00ZTU1LTk3NDctOGI3MzFkODQ3MzZkIiwicm9sZSI6IlNFTExFUiIsImV4cCI6MTc4MTk5Nzk4MywiaWF0IjoxNzgxOTk3NjgzfQ.GFLf92GzzaWvkXAXYTHnVPG4ihyrNIBrrNNMBgKXfwGKT6TNTBpF4FzKrvVtU24nrBnIBDwvu3I2Dz4ndICl7Dn2ul-xK_1GwG662urB-oQKvi3UyQgaHisvpEtnzXmNkytAvl-vlCG-Wp64i_rPbMYgULuA9Kg_3z_nmeLsW9iApWHjkCOGUozu8E_hacgs_XXZ_v6DwUylS_wk8wYn_7GLfyG-XbNYqGgZM5PJwql_bxwC340s7Y83MOF5duwLPoQW2RJOwxgF0J3fRoKx-Gzpdsb48o3cMxsGZQnkLMyXnlTxZfsZDPxF_JQZ6X1DfXJSTKw80pT-TKR9jsYv7g
+order: 3000
