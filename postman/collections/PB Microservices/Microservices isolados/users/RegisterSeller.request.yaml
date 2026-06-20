@@ -1,0 +1,8 @@
+$kind: http-request
+name: RegisterSeller
+url: "{{usersurl}}/auth/register/seller"
+method: POST
+body:
+  type: json
+  content: "{\r\n\r\n    \"email\":\"seller_isolado@email.com\",\r\n\r\n    \"password\":\"123456678\",\r\n\r\n    \"name\":\"Seller Isolado\"\r\n\r\n}"
+order: 2500
