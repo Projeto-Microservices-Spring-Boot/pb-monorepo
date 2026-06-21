@@ -1,4 +1,4 @@
-package com.infnet.geolocalizacao.dto.copaEstadios;
+package com.edu.infnet.pb.geolocalization.dto.copaEstadios;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;

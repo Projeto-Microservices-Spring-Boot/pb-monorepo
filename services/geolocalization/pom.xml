@@ -114,6 +114,13 @@
 		</dependency>
 
 
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+
+
+
 		<!-- Docs -->
 		<dependency>
 			<groupId>org.springdoc</groupId>

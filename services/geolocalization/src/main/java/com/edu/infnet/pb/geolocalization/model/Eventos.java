@@ -1,24 +1,22 @@
-package com.infnet.geolocalizacao.model;
+package com.edu.infnet.pb.geolocalization.model;
 
 
 
 
-
-import com.infnet.geolocalizacao.model.Enums.PointType;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "pontos_mapa")
-@Inheritance(strategy = InheritanceType.JOINED) // tabela separada por subtipo
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class PointMap {
+public class Eventos {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,19 +30,15 @@ public class PointMap {
     @Column(name = "endereco" , nullable = false)
     private String endereco;
 
-    @Column(name = "latitude" , nullable = false)
+    @Column(name = "latitude" , nullable = true)
     private Double latitude;
 
-    @Column(name = "longitude" , nullable = false)
+    @Column(name = "longitude" , nullable = true)
     private Double longitude;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PointType tipo;
+    @Column(nullable = true)
+    private LocalDateTime dataInicioEvento;
 
     @Column(nullable = true)
-    private LocalDate dataInicioEvento;
-
-    @Column(nullable = true)
-    private LocalDate dataFimEventos;
+    private LocalDateTime dataFimEventos;
 }

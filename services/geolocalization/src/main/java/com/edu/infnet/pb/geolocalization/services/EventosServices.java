@@ -1,76 +1,119 @@
-package com.infnet.geolocalizacao.services;
+package com.edu.infnet.pb.geolocalization.services;
 
 
-
-import com.infnet.geolocalizacao.dto.trocaEventos.CreateEventsDTO;
-import com.infnet.geolocalizacao.dto.trocaEventos.PlacesResponseDTO;
-import com.infnet.geolocalizacao.model.Enums.PointType;
-import com.infnet.geolocalizacao.model.PointMap;
-import com.infnet.geolocalizacao.repository.PointMapRepository;
+import com.edu.infnet.pb.geolocalization.client.UsuarioClient;
+import com.edu.infnet.pb.geolocalization.dto.EditarEventosDTO;
+import com.edu.infnet.pb.geolocalization.dto.PerfilResponseDTO;
+import com.edu.infnet.pb.geolocalization.dto.TrocaDTO;
+import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CreateEventsDTO;
+import com.edu.infnet.pb.geolocalization.dto.trocaEventos.PlacesResponseDTO;
+import com.edu.infnet.pb.geolocalization.model.Favorito;
+import com.edu.infnet.pb.geolocalization.model.Eventos;
+import com.edu.infnet.pb.geolocalization.repository.EventoRepository;
+import com.edu.infnet.pb.geolocalization.repository.FavoritoRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
 public class EventosServices {
 
 private ApiServices apiServices;
-private PointMapRepository pointMapRepository;
+private UsuarioClient usuarioClient;
+private FavoritoRepository favoritoRepository;
+private EventoRepository eventoRepository;
+private FigurinhaService figurinhaService;
 
+    public ResponseEntity<Eventos> criarEvento(CreateEventsDTO createEventsDTO) {
+        Eventos eventos = new Eventos();
 
-    public ResponseEntity<PointMap> criarEvento(CreateEventsDTO createEventsDTO) {
-        PointMap pointMap = new PointMap();
-
-        pointMap.setNome(createEventsDTO.nome());
-        pointMap.setDescricao(createEventsDTO.descricao());
-        pointMap.setEndereco(createEventsDTO.endereco());
-        pointMap.setLatitude(createEventsDTO.latitude());
-        pointMap.setLongitude(createEventsDTO.longitude());
-        pointMap.setDataInicioEvento(createEventsDTO.dataInicio());
-        pointMap.setDataFimEventos(createEventsDTO.dataFim());
-        pointMap.setTipo(PointType.EVENTO);
+        eventos.setNome(createEventsDTO.nome());
+        eventos.setDescricao(createEventsDTO.descricao());
+        eventos.setEndereco(createEventsDTO.endereco());
+        eventos.setLatitude(createEventsDTO.latitude());
+        eventos.setLongitude(createEventsDTO.longitude());
+        eventos.setDataInicioEvento(createEventsDTO.dataInicio());
+        eventos.setDataFimEventos(createEventsDTO.dataFim());
 
         if (createEventsDTO.latitude() == null || createEventsDTO.longitude() == null) {
             List<PlacesResponseDTO> locais = apiServices.buscarLocais(createEventsDTO.endereco()).block();
-
             if(locais != null && !locais.isEmpty()) {
-
                 PlacesResponseDTO local = locais.get(0);
-
-                pointMap.setLatitude(
+                eventos.setLatitude(
                         Double.parseDouble(local.lat())
                 );
-
-                pointMap.setLongitude(
+                eventos.setLongitude(
                         Double.parseDouble(local.lon())
                 );
             }
         }
 
-        PointMap salvo = pointMapRepository.save(pointMap);
+        Eventos salvo = eventoRepository.save(eventos);
 
         return ResponseEntity.ok(salvo);
     }
 
-    public ResponseEntity<PointMap> deletandoEvento(Long id) {
-    PointMap pointMap = pointMapRepository.findById(id).orElseThrow(() -> new RuntimeException("Evento nao encontrado"));
+    public ResponseEntity<Eventos> deletandoEvento(Long id) {
 
+    Eventos eventos = eventoRepository.findById(id).orElseThrow(() -> new RuntimeException("Evento nao encontrado"));
 
-    if(pointMap.getTipo() != PointType.EVENTO) {
-        throw new RuntimeException("O ponto informado nao e um evento");
-    }
-
-    pointMapRepository.delete(pointMap);
+    favoritoRepository.deleteByEventoId(id);
+    eventoRepository.delete(eventos);
 
     return ResponseEntity.noContent().build();
     }
 
 
-    public List<PointMap> listarEventos() {
-        return pointMapRepository.findAll();
+    public ResponseEntity<Eventos> editarEvento(Long id, EditarEventosDTO editarEventosDTO) {
+        Eventos eventos = eventoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evento nao encontrado"));
+
+        eventos.setDataInicioEvento(editarEventosDTO.dataInicio());
+        eventos.setDataFimEventos(editarEventosDTO.dataFim());
+
+        return ResponseEntity.ok(eventoRepository.save(eventos));
+
+    }
+
+
+    public ResponseEntity<Favorito> favoritarEvento (Long eventoId , String token) {
+        PerfilResponseDTO usuario = usuarioClient.buscarUusarioLogado(token);
+
+        Eventos evento = eventoRepository.findById(eventoId).orElseThrow(() -> new RuntimeException("Evento nao encontrado"));
+
+        Favorito favorito = Favorito.builder()
+                .usuarioId(usuario.id())
+                .evento(evento)
+                .dataFavoritado(LocalDateTime.now())
+                .build();
+
+        favoritoRepository.save(favorito);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(favorito);
+
+    }
+
+
+    public ResponseEntity<List<Eventos>> buscarEventosProximos(Double lat , Double lng , Double raioKm) {
+        List<Eventos> eventos = eventoRepository.buscarEventosProximos(lat, lng, raioKm);
+        return  ResponseEntity.ok(eventos);
+    }
+
+    public List<TrocaDTO> buscarMatchesNoEvento(Long eventoId, String token) {
+        List<TrocaDTO> todosMatches = figurinhaService.buscarMatches(token);
+        List<UUID> usuariosNoEvento = favoritoRepository.buscarUsuarioIdsPorEvento(eventoId);
+        return figurinhaService.filtrarMatchesPorUsuarios(todosMatches, usuariosNoEvento);
+    }
+
+
+    public List<Eventos> listarEventos() {
+        return eventoRepository.findAll();
     }
 
 

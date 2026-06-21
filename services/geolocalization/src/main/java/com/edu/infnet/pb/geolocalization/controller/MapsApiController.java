@@ -1,11 +1,9 @@
-package com.infnet.geolocalizacao.controller;
+package com.edu.infnet.pb.geolocalization.controller;
 
 
-
-
-import com.infnet.geolocalizacao.dto.copaEstadios.MatchDTO;
-import com.infnet.geolocalizacao.dto.trocaEventos.PlacesResponseDTO;
-import com.infnet.geolocalizacao.services.ApiServices;
+import com.edu.infnet.pb.geolocalization.dto.copaEstadios.MatchDTO;
+import com.edu.infnet.pb.geolocalization.dto.trocaEventos.PlacesResponseDTO;
+import com.edu.infnet.pb.geolocalization.services.ApiServices;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

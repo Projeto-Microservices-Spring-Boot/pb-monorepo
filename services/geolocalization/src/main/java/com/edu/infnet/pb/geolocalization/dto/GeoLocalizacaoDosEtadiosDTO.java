@@ -1,4 +1,4 @@
-package com.infnet.geolocalizacao.dto;
+package com.edu.infnet.pb.geolocalization.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

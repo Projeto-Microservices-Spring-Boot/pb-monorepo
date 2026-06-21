@@ -1,15 +1,13 @@
-package com.infnet.geolocalizacao.services;
+package com.edu.infnet.pb.geolocalization.services;
 
 
-
-
+import com.edu.infnet.pb.geolocalization.dto.GeoLocalizacaoDosEtadiosDTO;
+import com.edu.infnet.pb.geolocalization.dto.copaEstadios.FootballResponseDTO;
+import com.edu.infnet.pb.geolocalization.dto.copaEstadios.MatchDTO;
+import com.edu.infnet.pb.geolocalization.dto.copaEstadios.StadiumDTO;
+import com.edu.infnet.pb.geolocalization.dto.copaEstadios.StadiumResponseDTO;
+import com.edu.infnet.pb.geolocalization.dto.trocaEventos.PlacesResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.infnet.geolocalizacao.dto.GeoLocalizacaoDosEtadiosDTO;
-import com.infnet.geolocalizacao.dto.copaEstadios.FootballResponseDTO;
-import com.infnet.geolocalizacao.dto.copaEstadios.MatchDTO;
-import com.infnet.geolocalizacao.dto.copaEstadios.StadiumDTO;
-import com.infnet.geolocalizacao.dto.copaEstadios.StadiumResponseDTO;
-import com.infnet.geolocalizacao.dto.trocaEventos.PlacesResponseDTO;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
@@ -39,8 +37,6 @@ public class ApiServices {
                     .baseUrl("https://nominatim.openstreetmap.org")
                     .defaultHeader("User-Agent" , "ProjetoInfnet/1.0")
                     .build();
-
-
 
     @CircuitBreaker(name = "placesApi", fallbackMethod = "fallbackMap")
     public Mono<List<PlacesResponseDTO>> buscarLocais(String endereco) {
@@ -102,6 +98,7 @@ public class ApiServices {
                 ))
                 .toList();
     }
+
 
 
     // long e lati dos estadios

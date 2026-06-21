@@ -1,9 +1,8 @@
-package com.infnet.geolocalizacao.dto.trocaEventos;
+package com.edu.infnet.pb.geolocalization.dto.trocaEventos;
 
 
-import com.infnet.geolocalizacao.model.Enums.PointType;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import org.antlr.v4.runtime.misc.NotNull;
 
 public record CreateTradeDTO(
         @NotBlank
@@ -12,7 +11,6 @@ public record CreateTradeDTO(
         @NotNull
         String endereco,
         Double latitude,
-        Double longitude,
-       PointType setType
+        Double longitude
 ) {
 }

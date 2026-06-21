@@ -1,4 +1,4 @@
-package com.infnet.geolocalizacao.dto.trocaEventos;
+package com.edu.infnet.pb.geolocalization.dto.trocaEventos;
 
 
 public record PlacesResponseDTO(

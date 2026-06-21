@@ -1,15 +1,17 @@
-package com.infnet.geolocalizacao.services;
+package com.edu.infnet.pb.geolocalization.services;
 
 
-
-
-import com.infnet.geolocalizacao.dto.GeoLocalizacaoDosEtadiosDTO;
-import com.infnet.geolocalizacao.dto.copaEstadios.MatchDTO;
-import com.infnet.geolocalizacao.model.Enums.PointType;
-import com.infnet.geolocalizacao.model.EventoCopa;
-import com.infnet.geolocalizacao.repository.EventoCopaRepository;
+import com.edu.infnet.pb.geolocalization.client.UsuarioClient;
+import com.edu.infnet.pb.geolocalization.dto.GeoLocalizacaoDosEtadiosDTO;
+import com.edu.infnet.pb.geolocalization.dto.PerfilResponseDTO;
+import com.edu.infnet.pb.geolocalization.dto.copaEstadios.MatchDTO;
+import com.edu.infnet.pb.geolocalization.model.EventoCopa;
+import com.edu.infnet.pb.geolocalization.model.Favorito;
+import com.edu.infnet.pb.geolocalization.repository.EventoCopaRepository;
+import com.edu.infnet.pb.geolocalization.repository.FavoritoRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -23,12 +25,20 @@ public class EventoCopaService {
 
     private final EventoCopaRepository eventoCopaRepository;
     private final ApiServices apiServices;
+    private final UsuarioClient usuarioClient;
+    private final FavoritoRepository favoritoRepository;
 
 
     @PostConstruct
     public void init() {
-        if (eventoCopaRepository.count() == 0) {
-            criarEventosCopa();
+        try {
+            if (eventoCopaRepository.count() == 0) {
+                System.out.println("acesso ao api ");
+                criarEventosCopa();
+            }
+        } catch (Exception e) {
+            // Se a API externa falhar, não quebra a aplicação
+            System.out.println("API externa indisponível ao iniciar: " + e.getMessage());
         }
     }
 
@@ -41,13 +51,7 @@ public class EventoCopaService {
 
         jogos.forEach(jogo -> {
 
-            if (jogo.timeA() == null || jogo.timeB() == null) {
-                System.out.println("Jogo sem seleção definida");
-                System.out.println(jogo);
-            }
-
           EventoCopa eventoCopa = new EventoCopa();
-
             String timeA = jogo.timeA() == null ? "A definir" : jogo.timeA();
             String timeB = jogo.timeB() == null ? "A definir" : jogo.timeB();
             String selecoes = timeA + " x " + timeB;
@@ -57,15 +61,12 @@ public class EventoCopaService {
             eventoCopa.setSelecoes(selecoes);
             eventoCopa.setEstadio(jogo.estadio());
             eventoCopa.setCategoria(jogo.grupo());
-            eventoCopa.setTipo(PointType.EVENTO_COPA);
             eventoCopa.setDataJogo(
                     LocalDateTime.parse(jogo.dataJogo() , formatter)
             );
 
 
             GeoLocalizacaoDosEtadiosDTO locais = apiServices.buscarPorNome(jogo.estadio());
-            System.out.println("Estádio API: " + jogo.estadio());
-            System.out.println("Localização encontrada: " + locais);
 
             if (locais != null) {
                 eventoCopa.setLatitude(locais.latitude());
@@ -81,11 +82,41 @@ public class EventoCopaService {
         return ResponseEntity.ok().build();
     }
 
-    public ResponseEntity<Void> deletandoEventoCopas(Long id) {
-        EventoCopa eventoCopa = eventoCopaRepository.findByIdAndTipo(id , PointType.EVENTO_COPA).orElseThrow(() -> new RuntimeException("Evento da copa nao encontrado "));
-        eventoCopaRepository.delete(eventoCopa);
+    public ResponseEntity<Favorito> favoritarEventoCopa (Long eventoId , String token) {
+        PerfilResponseDTO usuario = usuarioClient.buscarUusarioLogado(token);
+
+        EventoCopa evento = eventoCopaRepository.findById(eventoId).orElseThrow(() -> new RuntimeException("Evento nao encontrado"));
+
+        Favorito favorito = Favorito.builder()
+                .usuarioId(usuario.id())
+                .eventoCopa(evento)
+                .dataFavoritado(LocalDateTime.now())
+                .build();
+
+        favoritoRepository.save(favorito);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(favorito);
+
+    }
+
+    public ResponseEntity<Void> deletandoFavoritosCopa(Long eventoId , String token) {
+        PerfilResponseDTO usuario = usuarioClient.buscarUusarioLogado(token);
+
+        Favorito favorito = favoritoRepository.findById(eventoId)
+                .orElseThrow(() -> new RuntimeException("Favorito não encontrado"));
+
+        if (!favorito.getUsuarioId().equals(usuario.id())) {
+            throw new RuntimeException("Favorito não pertence ao usuário");
+        }
+
+        favoritoRepository.delete(favorito);
 
         return ResponseEntity.noContent().build();
+    }
+
+    public List<Favorito> listarFavoritos(String token) {
+        PerfilResponseDTO usuario = usuarioClient.buscarUusarioLogado(token);
+        return favoritoRepository.findByUsuarioId(usuario.id());
     }
 
 
