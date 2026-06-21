@@ -18,6 +18,8 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        max.block.ms: 2000
 
 server:
   port: 8085
@@ -56,6 +58,13 @@ management:
           - health
           - prometheus
           - info
+
+resilience4j:
+  retry:
+    instances:
+      kafka-publisher:
+        max-attempts: 3
+        wait-duration: 500ms
 
 otel:
   exporter:
