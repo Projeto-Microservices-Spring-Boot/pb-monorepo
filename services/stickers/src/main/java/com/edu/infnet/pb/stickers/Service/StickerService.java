@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StickerService {
     private static final Logger log = LogManager.getLogger(StickerService.class);
-    private static final String CIRCUIT_BREAKER_NAME = "collection";
+    private static final String CIRCUIT_BREAKER_NAME = "sticker";
     private final StickerRepository stickerRepository;
 
     @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackFindById")
