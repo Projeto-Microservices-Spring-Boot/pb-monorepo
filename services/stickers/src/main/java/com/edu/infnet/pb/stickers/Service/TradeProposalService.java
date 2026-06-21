@@ -68,7 +68,7 @@ public class TradeProposalService {
     public TradeProposal createProposal(CreateTradeProposalDTO dto) {
         validateNotSameUser(dto.getProposerId(), dto.getReceiverId());
         validateNotEmpty(dto.getOfferedStickers(), "oferecidas");
-        validateNotEmpty(dto.getRequestedSticker(), "desejadas");
+        validateNotEmpty(dto.getRequestedStickers(), "desejadas");
 
         // Requisito não-funcional: impedir duplicidade de propostas em
         // aberto entre o mesmo par de usuários.
@@ -85,7 +85,7 @@ public class TradeProposalService {
         }
 
         // receptor precisa ter quantidade LIVRE suficiente do que está sendo pedido
-        for (TradeItemDTO item : dto.getRequestedSticker()) {
+        for (TradeItemDTO item : dto.getRequestedStickers()) {
             validateQuantity(item);
             collectionService.validateAvailableQuantity(
                     dto.getReceiverId(), item.getStickerId(), item.getQuantity());
@@ -102,7 +102,7 @@ public class TradeProposalService {
         dto.getOfferedStickers().forEach(item ->
                 trade.getOfferedStickers().add(buildOfferedSticker(trade, item)));
 
-        dto.getRequestedSticker().forEach(item ->
+        dto.getRequestedStickers().forEach(item ->
                 trade.getRequestedStickers().add(buildRequestedSticker(trade, item)));
 
         return tradeProposalRepository.save(trade);
