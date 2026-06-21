@@ -118,7 +118,7 @@ public class StickerCollectionController {
             collectionService.addSticker(userId, request.getStickerId(), request.getQuantity())));
   }
 
-  @DeleteMapping("/album/{stickerId}")
+  @DeleteMapping("/album/delete/{stickerId}")
   public ResponseEntity<Void> removeSticker(
           @AuthenticationPrincipal Jwt auth,
           @PathVariable Long stickerId,
