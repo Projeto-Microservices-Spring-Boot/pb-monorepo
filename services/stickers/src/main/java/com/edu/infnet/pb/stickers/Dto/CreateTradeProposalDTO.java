@@ -9,9 +9,9 @@ import java.util.UUID;
 @Getter
 @Setter
 public class CreateTradeProposalDTO {
-    UUID proposerId;
-    UUID receiverId;
-    String message;
-    List<TradeItemDTO> offeredStickers;
-    List<TradeItemDTO> requestedSticker;
+    private UUID proposerId;
+    private UUID receiverId;
+    private String message;
+    private List<TradeItemDTO> offeredStickers;
+    private List<TradeItemDTO> requestedStickers;
 }

@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class AddStickerToCollectionRequest {
 
-
+  
     private Long stickerId;
 
 

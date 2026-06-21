@@ -9,6 +9,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class AcceptTradeProposalDTO {
-    String meetingLocation;
-    LocalDateTime meetingAt;
+    private String meetingLocation;
+    private LocalDateTime meetingAt;
 }
