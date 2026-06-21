@@ -6,8 +6,6 @@ import com.edu.infnet.pb.stickers.Entity.UserCollectionId;
 import com.edu.infnet.pb.stickers.Exception.BusinessRuleException;
 import com.edu.infnet.pb.stickers.Exception.ResourceNotFoundException;
 import com.edu.infnet.pb.stickers.Repository.StickerCollectionRepository;
-import com.edu.infnet.pb.stickers.Repository.TradeOfferedStickerRepository;
-import com.edu.infnet.pb.stickers.Repository.TradeRequestedStickerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,8 +18,7 @@ import java.util.UUID;
 public class StickerCollectionService {
 
     private final StickerCollectionRepository collectionRepository;
-    private final TradeOfferedStickerRepository tradeOfferedStickerRepository;
-    private final TradeRequestedStickerRepository tradeRequestedStickerRepository;
+
     private final StickerService stickerService;
 
     public List<UserCollection> findByUserId(UUID userId) {
@@ -61,24 +58,12 @@ public class StickerCollectionService {
     }
 
     /**
-     * Quantidade "livre" de uma sticker, ou seja, descontando o que já está
-     * travado em trocas ATIVAS (PENDING ou ACCEPTED) — seja porque o usuário
-     * está OFERECENDO essa sticker em uma proposta, seja porque ela está
-     * sendo SOLICITADA dele em uma proposta que recebeu.
-     * É essa quantidade que deve ser usada para validar novas trocas.
+     * Quantidade disponível de uma sticker que o usuário possui na coleção.
      */
     public int getAvailableQuantity(UUID userId, Long stickerId) {
-        int totalOwned = collectionRepository.findByIdUserIdAndIdStickerId(userId, stickerId)
+        return collectionRepository.findByIdUserIdAndIdStickerId(userId, stickerId)
                 .map(UserCollection::getQuantity)
                 .orElse(0);
-
-        int lockedAsOfferer = tradeOfferedStickerRepository
-                .sumQuantityInActiveTrades(userId, stickerId);
-
-        int lockedAsReceiver = tradeRequestedStickerRepository
-                .sumQuantityInActiveTrades(userId, stickerId);
-
-        return totalOwned - lockedAsOfferer - lockedAsReceiver;
     }
 
     /**
