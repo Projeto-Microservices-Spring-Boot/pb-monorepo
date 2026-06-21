@@ -50,11 +50,12 @@ public class StickerCollectionController {
   @GetMapping("/album")
   public ResponseEntity<List<UserCollectionResponse>> findMyCollection(@AuthenticationPrincipal Jwt auth) {
     UUID userId = currentUserId(auth);
+    log.info("Buscando coleção do usuário id={}", userId);
 
     var result = collectionService.findByUserId(userId).stream()
             .map(UserCollectionResponse::fromEntity)
             .toList();
-
+    log.info("Coleção encontrada: {} stickers para usuário id={}", result.size(), userId);
     return ResponseEntity.ok(result);
   }
 
@@ -63,36 +64,53 @@ public class StickerCollectionController {
           @AuthenticationPrincipal Jwt auth,
           @PathVariable Long stickerId) {
     UUID userId = currentUserId(auth);
+    log.info("Buscando sticker id={} para usuário id={}", stickerId, userId);
 
-    return ResponseEntity.ok(UserCollectionResponse.fromEntity(
-            collectionService.findByUserIdAndStickerId(userId, stickerId)));
+    UserCollectionResponse response = UserCollectionResponse.fromEntity(
+            collectionService.findByUserIdAndStickerId(userId, stickerId));
+
+    log.info("Sticker id={} encontrada para usuário id={}", stickerId, userId);
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping("/repeated")
   public ResponseEntity<List<UserCollectionResponse>> findRepeated(@AuthenticationPrincipal Jwt auth) {
     UUID userId = currentUserId(auth);
+    log.info("Buscando stickers repetidas do usuário id={}", userId);
 
-    return ResponseEntity.ok(collectionService.findRepeated(userId).stream()
+    var result = collectionService.findRepeated(userId).stream()
             .map(UserCollectionResponse::fromEntity)
-            .toList());
+            .toList();
+
+    log.info("Encontradas {} stickers repetidas para usuário id={}", result.size(), userId);
+    return ResponseEntity.ok(result);
   }
 
   @GetMapping("/missing")
   public ResponseEntity<List<StickerResponse>> findMissing(@AuthenticationPrincipal Jwt auth) {
     UUID userId = currentUserId(auth);
+    log.info("Buscando stickers faltantes do usuário id={}", userId);
 
-    return ResponseEntity.ok(collectionService.findMissing(userId).stream()
+    var result = collectionService.findMissing(userId).stream()
             .map(StickerResponse::fromEntity)
-            .toList());
+            .toList();
+
+    log.info("Encontradas {} stickers faltantes para usuário id={}", result.size(), userId);
+    return ResponseEntity.ok(result);
   }
 
   @GetMapping("/progress")
   public ResponseEntity<AlbumProgressResponse> getAlbumProgress(@AuthenticationPrincipal Jwt auth) {
     UUID userId = currentUserId(auth);
+    log.info("Buscando progresso do álbum do usuário id={}", userId);
 
+    long owned = collectionService.countDistinctOwned(userId);
+    double progress = collectionService.getAlbumProgressPercentage(userId);
+
+    log.info("Progresso do usuário id={}: {} stickers, {}", userId, owned, progress);
     return ResponseEntity.ok(AlbumProgressResponse.builder()
-            .ownedStickers(collectionService.countDistinctOwned(userId))
-            .progressPercentage(collectionService.getAlbumProgressPercentage(userId))
+            .ownedStickers(owned)
+            .progressPercentage(progress)
             .build());
   }
 
@@ -101,10 +119,14 @@ public class StickerCollectionController {
           @AuthenticationPrincipal Jwt auth,
           @PathVariable Long stickerId) {
     UUID userId = currentUserId(auth);
+    log.info("Buscando quantidade disponível da sticker id={} para usuário id={}", stickerId, userId);
 
+    int available = collectionService.getAvailableQuantity(userId, stickerId);
+
+    log.info("Quantidade disponível da sticker id={} para usuário id={}: {}", stickerId, userId, available);
     return ResponseEntity.ok(AvailableQuantityResponse.builder()
             .stickerId(stickerId)
-            .availableQuantity(collectionService.getAvailableQuantity(userId, stickerId))
+            .availableQuantity(available)
             .build());
   }
 
@@ -113,9 +135,14 @@ public class StickerCollectionController {
           @AuthenticationPrincipal Jwt auth,
           @Valid @RequestBody AddStickerToCollectionRequest request) {
     UUID userId = currentUserId(auth);
+    log.info("Adicionando sticker id={} quantidade={} para usuário id={}",
+            request.getStickerId(), request.getQuantity(), userId);
 
-    return ResponseEntity.status(HttpStatus.CREATED).body(UserCollectionResponse.fromEntity(
-            collectionService.addSticker(userId, request.getStickerId(), request.getQuantity())));
+    UserCollectionResponse response = UserCollectionResponse.fromEntity(
+            collectionService.addSticker(userId, request.getStickerId(), request.getQuantity()));
+
+    log.info("Sticker id={} adicionada com sucesso para usuário id={}", request.getStickerId(), userId);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   @DeleteMapping("/album/delete/{stickerId}")
@@ -124,8 +151,11 @@ public class StickerCollectionController {
           @PathVariable Long stickerId,
           @RequestParam(defaultValue = "1") @Min(value = 1, message = "A quantidade deve ser maior que zero") int quantity) {
     UUID userId = currentUserId(auth);
+    log.info("Removendo sticker id={} quantidade={} do usuário id={}", stickerId, quantity, userId);
 
     collectionService.removeQuantity(userId, stickerId, quantity);
+
+    log.info("Sticker id={} removida com sucesso do usuário id={}", stickerId, userId);
     return ResponseEntity.noContent().build();
   }
 }
