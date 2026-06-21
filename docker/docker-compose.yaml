@@ -319,8 +319,8 @@ services:
         condition: service_healthy
       kong: 
          condition: service_healthy
-      kafka:
-        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
 
   stickers:
     container_name: stickers-service
