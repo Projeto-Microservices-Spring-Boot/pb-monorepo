@@ -56,6 +56,8 @@ logging:
   pattern:
     correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
 
+
+
 management:
   tracing:
     sampling:
@@ -79,3 +81,12 @@ otel:
     exporter: none
   logs:
     exporter: none
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      collection:
+        sliding-window-size: 10               # analisa as últimas 10 requisições
+        failure-rate-threshold: 50            # se 50% falharem, abre o circuito
+        wait-duration-in-open-state: 30s      # fica aberto 30s antes de tentar de novo
+        permitted-number-of-calls-in-half-open-state: 3 # testa com 3 requisições antes de fechar

@@ -6,7 +6,10 @@ import com.edu.infnet.pb.stickers.Entity.UserCollectionId;
 import com.edu.infnet.pb.stickers.Exception.BusinessRuleException;
 import com.edu.infnet.pb.stickers.Exception.ResourceNotFoundException;
 import com.edu.infnet.pb.stickers.Repository.StickerCollectionRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,31 +19,65 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class StickerCollectionService {
+    private static final String CIRCUIT_BREAKER_NAME = "collection";
 
+    private static final Logger log = LogManager.getLogger(StickerCollectionService.class);
     private final StickerCollectionRepository collectionRepository;
 
     private final StickerService stickerService;
 
+
+
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackFindByUserId")
     public List<UserCollection> findByUserId(UUID userId) {
         return collectionRepository.findByIdUserId(userId);
     }
 
+    public List<UserCollection> fallbackFindByUserId(UUID userId, Exception e) {
+        log.error("Banco instável ao buscar coleção do usuário id={} erro={}", userId, e.getMessage());
+        throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
+    }
+
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackFindByUserIdAndStickerId")
     public UserCollection findByUserIdAndStickerId(UUID userId, Long stickerId) {
         return collectionRepository.findByIdUserIdAndIdStickerId(userId, stickerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Usuário não possui essa sticker na coleção"));
     }
 
+    public UserCollection fallbackFindByUserIdAndStickerId(UUID userId, Long stickerId, Exception e) {
+        log.error("Banco instável ao buscar sticker id={} do usuário id={} erro={}", stickerId, userId, e.getMessage());
+        throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
+    }
+
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackFindRepeated")
     public List<UserCollection> findRepeated(UUID userId) {
         return collectionRepository.findRepeatedByUserId(userId);
     }
 
+    public List<UserCollection> fallbackFindRepeated(UUID userId, Exception e) {
+        log.error("Banco instável ao buscar stickers repetidas do usuário id={} erro={}", userId, e.getMessage());
+        throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
+    }
+
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackFindMissing")
     public List<Sticker> findMissing(UUID userId) {
         return collectionRepository.findMissingByUserId(userId);
     }
 
+    public List<Sticker> fallbackFindMissing(UUID userId, Exception e) {
+        log.error("Banco instável ao buscar stickers faltantes do usuário id={} erro={}", userId, e.getMessage());
+        throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
+    }
+
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackCountDistinctOwned")
     public long countDistinctOwned(UUID userId) {
         return collectionRepository.countByUserId(userId);
+    }
+
+    public long fallbackCountDistinctOwned(UUID userId, Exception e) {
+        log.error("Banco instável ao contar stickers do usuário id={} erro={}", userId, e.getMessage());
+        throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
     }
 
     /**
@@ -60,16 +97,23 @@ public class StickerCollectionService {
     /**
      * Quantidade disponível de uma sticker que o usuário possui na coleção.
      */
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackGetAvailableQuantity")
     public int getAvailableQuantity(UUID userId, Long stickerId) {
         return collectionRepository.findByIdUserIdAndIdStickerId(userId, stickerId)
                 .map(UserCollection::getQuantity)
                 .orElse(0);
     }
 
+    public int fallbackGetAvailableQuantity(UUID userId, Long stickerId, Exception e) {
+        log.error("Banco instável ao buscar quantidade disponível da sticker id={} do usuário id={} erro={}", stickerId, userId, e.getMessage());
+        throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
+    }
+
     /**
      * Adiciona stickers à coleção do usuário.
      * Se o usuário já tiver a sticker, soma a quantidade.
      */
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackAddSticker")
     @Transactional
     public UserCollection addSticker(UUID userId, Long stickerId, int quantityToAdd) {
         if (quantityToAdd <= 0) {
@@ -90,10 +134,16 @@ public class StickerCollectionService {
         return collectionRepository.save(collection);
     }
 
+    public UserCollection fallbackAddSticker(UUID userId, Long stickerId, int quantityToAdd, Exception e) {
+        log.error("Banco instável ao adicionar sticker id={} para usuário id={} erro={}", stickerId, userId, e.getMessage());
+        throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
+    }
+
     /**
      * Remove uma quantidade de stickers da coleção (uso interno, principalmente
      * chamado pelo TradeProposalService ao efetivar uma troca).
      */
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackRemoveQuantity")
     @Transactional
     public void removeQuantity(UUID userId, Long stickerId, int quantityToRemove) {
         UserCollection collection = findByUserIdAndStickerId(userId, stickerId);
@@ -111,6 +161,11 @@ public class StickerCollectionService {
             collection.setQuantity(remaining);
             collectionRepository.save(collection);
         }
+    }
+
+    public void fallbackRemoveQuantity(UUID userId, Long stickerId, int quantityToRemove, Exception e) {
+        log.error("Banco instável ao remover sticker id={} do usuário id={} erro={}", stickerId, userId, e.getMessage());
+        throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
     }
 
     /**
