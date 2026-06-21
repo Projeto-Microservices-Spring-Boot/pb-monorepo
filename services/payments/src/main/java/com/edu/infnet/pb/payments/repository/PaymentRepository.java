@@ -12,4 +12,5 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     List<Payment> findByUserId(UUID userId);
 
+    boolean existsByOrderId(UUID orderId);
 }
