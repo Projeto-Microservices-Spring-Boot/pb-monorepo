@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +18,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/stickers")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')") //Somente Admin pode acessar
 public class StickerController {
     private static final Logger log = LogManager.getLogger(StickerController.class);
     private final StickerService stickerService;
