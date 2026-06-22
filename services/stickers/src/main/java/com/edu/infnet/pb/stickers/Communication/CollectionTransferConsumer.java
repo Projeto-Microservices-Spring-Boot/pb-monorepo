@@ -1,12 +1,9 @@
 package com.edu.infnet.pb.stickers.Communication;
 
 import com.edu.infnet.pb.stickers.Dto.Communication.CollectionTranferReponse;
-import com.edu.infnet.pb.stickers.Service.StickerCollectionService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 @Service
