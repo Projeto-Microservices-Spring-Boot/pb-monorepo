@@ -19,7 +19,7 @@ spring:
      mode: always
      data-locations: classpath:database-sticker.seed/*.sql
   kafka:
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: kafka:29092
     consumer:
       group-id: sticker-service
       auto-offset-reset: earliest # quando não há offset salvo, começa a ler do início da fila
