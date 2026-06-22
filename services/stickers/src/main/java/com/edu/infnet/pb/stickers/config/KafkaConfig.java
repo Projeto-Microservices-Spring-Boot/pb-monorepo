@@ -22,6 +22,10 @@ public class KafkaConfig {
 
 
     }
+    @Bean
+    public NewTopic collectionTransferDlt() {
+        return new NewTopic("collection-transfer.DLT", 1, (short) 1);  // <- faltando
+    }
     /**
      * Factory responsável por criar os containers que executam os @KafkaListener.
      * Tudo que configuramos aqui se aplica a TODOS os consumers que usarem
