@@ -29,7 +29,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer # serializador da chave da mensagem (String)
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # serializador do valor da mensagem (JSON -> objeto Java)
       properties:
-        spring.json.trusted.packages: "{com.edu.infnet.pb.geolocalization.dto}" # pacotes confiáveis para deserializar o JSON
+        spring.json.trusted.packages: "{com.edu.infnet.pb.stickers.Dto.Communication}" # pacotes confiáveis para deserializar o JSON
 
 
 
