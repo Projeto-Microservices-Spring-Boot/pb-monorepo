@@ -104,6 +104,7 @@ public class TradeMatchService {
                             .userACanOffer(userACanOffer)
                             .userBCanOffer(userBCanOffer)
                             .stickersUserBHasThatUserANeeds(whatBOffersToA)
+                            .stickersUserAHasThatUserBNeeds(whatAOffersToB)
                             .build());
                 }
             }
@@ -145,6 +146,3 @@ public class TradeMatchService {
         throw new BusinessRuleException("Serviço temporariamente indisponível, tente novamente em instantes");
     }
 }
-
-
-

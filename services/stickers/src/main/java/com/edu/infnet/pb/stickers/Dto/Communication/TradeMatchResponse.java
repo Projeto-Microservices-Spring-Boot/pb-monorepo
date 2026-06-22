@@ -26,4 +26,7 @@ public class TradeMatchResponse {
 
     // Detalhe (id e nome do jogador) das stickers que o usuário B possui repetida e que o usuário A não possui
     private List<StickerTradeItem> stickersUserBHasThatUserANeeds;
+
+    // Detalhe (id e nome do jogador) das stickers que o usuário A possui repetida e que o usuário B não possui
+    private List<StickerTradeItem> stickersUserAHasThatUserBNeeds;
 }
