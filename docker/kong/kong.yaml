@@ -138,11 +138,11 @@ services:
     routes:
       - name: stickers
         paths:
-          -/sticker
+          - /sticker
         strip_path: false
         protocols:
-          -http
-          -https
+          - http
+          - https
         plugins:
           - name: jwt
             config:
@@ -176,7 +176,7 @@ services:
 
       - name: stickers-docs
         paths: ["/docs/stickers"]
-        strip_path: true
+        strip_path: false
         protocols:
           - http
 
@@ -243,6 +243,7 @@ plugins:
   - name: cors
     config:
       origins:
+        - "http://localhost:8089"
         - "http://localhost:3000" # frontend (dev)
       credentials: true # Necessário para header Authorization funcionar no browser
       max_age: 3600 # Cache do preflight por 1 hora
