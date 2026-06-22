@@ -138,7 +138,7 @@ services:
     routes:
       - name: stickers
         paths:
-          - /sticker
+          - /stickers
         strip_path: false
         protocols:
           - http
