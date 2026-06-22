@@ -30,6 +30,8 @@ public class KafkaConfig {
      * O Spring injeta automaticamente:
      * - consumerFactory: criado pelo auto-configure do Spring Boot com as props do application.yml
      */
+
+    // ---------- FallBack pro consumer --------------\\
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
             ConsumerFactory<String, Object> consumerFactory,
