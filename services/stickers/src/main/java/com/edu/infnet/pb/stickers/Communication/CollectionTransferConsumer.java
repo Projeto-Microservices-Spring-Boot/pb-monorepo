@@ -16,7 +16,7 @@ public class CollectionTransferConsumer {
     private static final Logger log = LogManager.getLogger(CollectionTransferConsumer.class);
     private final CollectionTransferService transferService;
 
-    @KafkaListener(topics = "collection-transfer", groupId = "stickers-service", containerFactory = "kafkaListenerContainerFactory")
+    @KafkaListener(topics = "collection-transfer", containerFactory = "kafkaListenerContainerFactory")
     public void receive(PropostaAceitaEvent event, Acknowledgment ack) {
         log.info("Mensagem recebida do geo: propostaId={} usuarioOrigem={} usuarioDestino={}",
                 event.getPropostaId(), event.getUsuarioOrigem(), event.getUsuarioDestino());
