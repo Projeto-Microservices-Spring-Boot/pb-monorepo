@@ -3,6 +3,9 @@ package com.edu.infnet.pb.stickers.Controller;
 import java.util.List;
 import java.util.UUID;
 
+import com.edu.infnet.pb.stickers.Dto.*;
+import com.edu.infnet.pb.stickers.Dto.Communication.TradeMatchResponse;
+import com.edu.infnet.pb.stickers.Service.TradeMatchService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -18,11 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.edu.infnet.pb.stickers.Dto.AddStickerToCollectionRequest;
-import com.edu.infnet.pb.stickers.Dto.AlbumProgressResponse;
-import com.edu.infnet.pb.stickers.Dto.AvailableQuantityResponse;
-import com.edu.infnet.pb.stickers.Dto.StickerResponse;
-import com.edu.infnet.pb.stickers.Dto.UserCollectionResponse;
 import com.edu.infnet.pb.stickers.Service.StickerCollectionService;
 
 import jakarta.validation.Valid;
@@ -37,6 +35,7 @@ public class StickerCollectionController {
   private static final Logger log = LogManager.getLogger(StickerCollectionController.class);
 
   private final StickerCollectionService collectionService;
+  private final TradeMatchService tradeMatchService;
 
   /**
    * Extrai o userId a partir do "sub" do JWT já validado pelo Spring Security
@@ -157,5 +156,20 @@ public class StickerCollectionController {
 
     log.info("Sticker id={} removida com sucesso do usuário id={}", stickerId, userId);
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Calcula, com base em todos os dados já existentes no banco, todos os
+   * pares de usuários que podem trocar entre si. Endpoint público: não
+   * exige autenticação, pois o cálculo não depende de um usuário logado.
+   */
+  @GetMapping("/matches")
+  public ResponseEntity<List<TradeMatchResponse>> findMatches() {
+    log.info("Buscando matches de troca entre todos os usuários");
+
+    List<TradeMatchResponse> matches = tradeMatchService.findMatches();
+
+    log.info("Encontrados {} matches de troca", matches.size());
+    return ResponseEntity.ok(matches);
   }
 }

@@ -18,7 +18,7 @@ public class CollectionTransferConsumer {
             backoff = @Backoff(delay = 2000) // espera 2s entre tentativas
     )
 
-    @KafkaListener(topics = "Collection-Transfer-response", groupId = "stickers-service")
+    @KafkaListener(topics = "collection-transfer", groupId = "stickers-service")
     public void receive(CollectionTranferReponse response) {
         log.info("Mensagem recebida do geo");
 
