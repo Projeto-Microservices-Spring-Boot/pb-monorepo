@@ -25,6 +25,9 @@ spring:
       auto-offset-reset: earliest # quando não há offset salvo, começa a ler do início da fila
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # desserializador da chave da mensagem (String)
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # desserializador do valor da mensagem (JSON -> objeto Java)
+    producer: # necessário para o KafkaTemplate enviar para a DLT
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer # serializador da chave da mensagem (String)
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # serializador do valor da mensagem (JSON -> objeto Java)
       properties:
         spring.json.trusted.packages: "{com.edu.infnet.pb.geolocalization.dto}" # pacotes confiáveis para deserializar o JSON
 

@@ -100,11 +100,6 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Retry -->
-        <dependency>
-            <groupId>org.springframework.retry</groupId>
-            <artifactId>spring-retry</artifactId>
-        </dependency>
         <!-- Resiliencia -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
