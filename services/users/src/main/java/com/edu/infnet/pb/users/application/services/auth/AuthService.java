@@ -37,7 +37,7 @@ public class AuthService {
 
   private static final Logger logger = LogManager.getLogger(AuthService.class);
 
-  long ACCESS_TOKEN_EXPIRES_IN = 300L; // expira em 5min
+  long ACCESS_TOKEN_EXPIRES_IN = 1200L; // expira em 20min
   long REFRESH_TOKEN_EXPIRES_IN = 604800; // expira em 7 dias
 
   @Transactional
@@ -140,33 +140,35 @@ public class AuthService {
   }
 
   // public LoginResponseDto refresh(String refreshToken, UUID userId) {
-  //   Instant NOW = Instant.now();
+  // Instant NOW = Instant.now();
 
-  //   var userExists = repo.findById(userId);
-  //   if (!userExists.isPresent()) {
-  //     logger.error("Usuário não encontrado!");
-  //     throw new ResourceNotFoundException("usuário não encontrado!");
-  //   }
+  // var userExists = repo.findById(userId);
+  // if (!userExists.isPresent()) {
+  // logger.error("Usuário não encontrado!");
+  // throw new ResourceNotFoundException("usuário não encontrado!");
+  // }
 
-  //   var user = userExists.get();
+  // var user = userExists.get();
 
-  //   var claims = JwtClaimsSet.builder()
-  //       .issuer("frontend")
-  //       .subject(user.getId().toString())
-  //       .claim("name", user.getName())
-  //       .claim("role", user.getRoles())
-  //       .issuedAt(NOW)
-  //       .expiresAt(NOW.plusSeconds(ACCESS_TOKEN_EXPIRES_IN)).build();
+  // var claims = JwtClaimsSet.builder()
+  // .issuer("frontend")
+  // .subject(user.getId().toString())
+  // .claim("name", user.getName())
+  // .claim("role", user.getRoles())
+  // .issuedAt(NOW)
+  // .expiresAt(NOW.plusSeconds(ACCESS_TOKEN_EXPIRES_IN)).build();
 
-  //   var newAccessToken = jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-  //   var newRawRefreshToken = user.generateRefreshToken();
+  // var newAccessToken =
+  // jwt.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+  // var newRawRefreshToken = user.generateRefreshToken();
 
-  //   updateRefreshToken(user, refreshToken);
-  //   user.setRefreshTokenExpiresIn(NOW.plusSeconds(REFRESH_TOKEN_EXPIRES_IN));
+  // updateRefreshToken(user, refreshToken);
+  // user.setRefreshTokenExpiresIn(NOW.plusSeconds(REFRESH_TOKEN_EXPIRES_IN));
 
-  //   logger.info("Tokens recriados com sucesso!");
-  //   repo.save(user);
+  // logger.info("Tokens recriados com sucesso!");
+  // repo.save(user);
 
-  //   return new LoginResponseDto(newAccessToken, newRawRefreshToken, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN);
+  // return new LoginResponseDto(newAccessToken, newRawRefreshToken,
+  // ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_EXPIRES_IN);
   // }
 }
