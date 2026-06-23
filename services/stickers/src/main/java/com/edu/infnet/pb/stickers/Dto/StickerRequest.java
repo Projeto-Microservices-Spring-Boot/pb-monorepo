@@ -21,7 +21,7 @@ public class StickerRequest {
 
     private StickerType type;
 
-
+    //transforma dto em entidade para salvar no banco
     public Sticker toEntity() {
         return Sticker.builder()
                 .stickerCode(stickerCode)

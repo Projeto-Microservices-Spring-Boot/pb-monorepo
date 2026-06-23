@@ -326,7 +326,9 @@ services:
       pg:
         condition: service_healthy
       kong: 
-         condition: service_healthy  
+         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   store:
     container_name: store-service
