@@ -37,7 +37,7 @@ public class AuthService {
 
   private static final Logger logger = LogManager.getLogger(AuthService.class);
 
-  long ACCESS_TOKEN_EXPIRES_IN = 300L; // expira em 5min
+  long ACCESS_TOKEN_EXPIRES_IN = 1200L; // expira em 20min
   long REFRESH_TOKEN_EXPIRES_IN = 604800; // expira em 7 dias
 
   @Transactional

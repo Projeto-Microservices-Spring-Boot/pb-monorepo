@@ -11,7 +11,28 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true # Spring espera o Hibernate criar/atualizar os schemas
     show-sql: true
+
+  sql:
+    init:
+     mode: always
+     data-locations: classpath:database-sticker.seed/*.sql
+  kafka:
+    bootstrap-servers: kafka:29092
+    consumer:
+      group-id: stickers-service
+      auto-offset-reset: earliest # quando não há offset salvo, começa a ler do início da fila
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # desserializador da chave da mensagem (String)
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # desserializador do valor da mensagem (JSON -> objeto Java)
+    producer: # necessário para o KafkaTemplate enviar para a DLT
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer # serializador da chave da mensagem (String)
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # serializador do valor da mensagem (JSON -> objeto Java)
+      properties:
+        spring.json.trusted.packages: "{com.edu.infnet.pb.stickers.Dto.Communication}" # pacotes confiáveis para deserializar o JSON
+
+
+
 
 server:
   port: 8087
@@ -38,6 +59,8 @@ logging:
   pattern:
     correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
 
+
+
 management:
   tracing:
     sampling:
@@ -50,6 +73,10 @@ management:
           - health
           - prometheus
           - info
+  logging:
+    level:
+      root: ERROR # framework (Spring, Hibernate, Kafka) só mostra erros
+      com.edu.infnet.pb.stickers: INFO # meu código mostra INFO e ERROR
 
 otel:
   exporter:
@@ -61,3 +88,17 @@ otel:
     exporter: none
   logs:
     exporter: none
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      collection:
+        sliding-window-size: 10               # analisa as últimas 10 requisições
+        failure-rate-threshold: 50            # se 50% falharem, abre o circuito
+        wait-duration-in-open-state: 30s      # fica aberto 30s antes de tentar de novo      # fica aberto 30s antes de tentar de novo
+        permitted-number-of-calls-in-half-open-state: 3 # testa com 3 requisições antes de fechar
+      sticker:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3

@@ -86,9 +86,3 @@ otel:
     exporter: none
   logs:
     exporter: none
-
-jwt:
-  public:
-    key: classpath:app.key.pub
-  private:
-    key: classpath:app.key

@@ -325,8 +325,8 @@ services:
   stickers:
     container_name: stickers-service
     build:
-      context: ../services/stickers/
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: services/stickers/Dockerfile
     ports:
       - "8087:8087"
     healthcheck:
@@ -338,7 +338,9 @@ services:
       pg:
         condition: service_healthy
       kong: 
-         condition: service_healthy  
+         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   store:
     container_name: store-service
