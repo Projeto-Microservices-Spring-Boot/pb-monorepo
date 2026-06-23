@@ -4,8 +4,8 @@ package com.edu.infnet.pb.geolocalization.services;
 import com.edu.infnet.pb.geolocalization.client.UsuarioClient;
 import com.edu.infnet.pb.geolocalization.dto.EditarEventosDTO;
 import com.edu.infnet.pb.geolocalization.dto.PerfilResponseDTO;
-import com.edu.infnet.pb.geolocalization.dto.TrocaDTO;
-import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CreateEventsDTO;
+import com.edu.infnet.pb.geolocalization.dto.figurinhas.TradeMatchResponseDTO;
+import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CriacaoEventoDTO;
 import com.edu.infnet.pb.geolocalization.dto.trocaEventos.PlacesResponseDTO;
 import com.edu.infnet.pb.geolocalization.model.Favorito;
 import com.edu.infnet.pb.geolocalization.model.Eventos;
@@ -30,19 +30,19 @@ private FavoritoRepository favoritoRepository;
 private EventoRepository eventoRepository;
 private FigurinhaService figurinhaService;
 
-    public ResponseEntity<Eventos> criarEvento(CreateEventsDTO createEventsDTO) {
+    public ResponseEntity<Eventos> criarEvento(CriacaoEventoDTO criacaoEventoDTO) {
         Eventos eventos = new Eventos();
 
-        eventos.setNome(createEventsDTO.nome());
-        eventos.setDescricao(createEventsDTO.descricao());
-        eventos.setEndereco(createEventsDTO.endereco());
-        eventos.setLatitude(createEventsDTO.latitude());
-        eventos.setLongitude(createEventsDTO.longitude());
-        eventos.setDataInicioEvento(createEventsDTO.dataInicio());
-        eventos.setDataFimEventos(createEventsDTO.dataFim());
+        eventos.setNome(criacaoEventoDTO.nome());
+        eventos.setDescricao(criacaoEventoDTO.descricao());
+        eventos.setEndereco(criacaoEventoDTO.endereco());
+        eventos.setLatitude(criacaoEventoDTO.latitude());
+        eventos.setLongitude(criacaoEventoDTO.longitude());
+        eventos.setDataInicioEvento(criacaoEventoDTO.dataInicio());
+        eventos.setDataFimEventos(criacaoEventoDTO.dataFim());
 
-        if (createEventsDTO.latitude() == null || createEventsDTO.longitude() == null) {
-            List<PlacesResponseDTO> locais = apiServices.buscarLocais(createEventsDTO.endereco()).block();
+        if (criacaoEventoDTO.latitude() == null || criacaoEventoDTO.longitude() == null) {
+            List<PlacesResponseDTO> locais = apiServices.buscarLocais(criacaoEventoDTO.endereco()).block();
             if(locais != null && !locais.isEmpty()) {
                 PlacesResponseDTO local = locais.get(0);
                 eventos.setLatitude(
@@ -81,7 +81,6 @@ private FigurinhaService figurinhaService;
 
     }
 
-
     public ResponseEntity<Favorito> favoritarEvento (Long eventoId , String token) {
         PerfilResponseDTO usuario = usuarioClient.buscarUusarioLogado(token);
 
@@ -99,22 +98,18 @@ private FigurinhaService figurinhaService;
 
     }
 
-
     public ResponseEntity<List<Eventos>> buscarEventosProximos(Double lat , Double lng , Double raioKm) {
         List<Eventos> eventos = eventoRepository.buscarEventosProximos(lat, lng, raioKm);
         return  ResponseEntity.ok(eventos);
     }
 
-    public List<TrocaDTO> buscarMatchesNoEvento(Long eventoId, String token) {
-        List<TrocaDTO> todosMatches = figurinhaService.buscarMatches(token);
-        List<UUID> usuariosNoEvento = favoritoRepository.buscarUsuarioIdsPorEvento(eventoId);
-        return figurinhaService.filtrarMatchesPorUsuarios(todosMatches, usuariosNoEvento);
+    public List<TradeMatchResponseDTO> buscarMatchesNoEventos(Long trocaId) {
+        List<TradeMatchResponseDTO> todosMatches = figurinhaService.buscarTodosOsMatches();
+        List<UUID> usuariosNaTroca = favoritoRepository.buscarUsuarioIdsPorEvento(trocaId);
+        return figurinhaService.filtrarMatchesPorUsuarios(todosMatches, usuariosNaTroca);
     }
-
 
     public List<Eventos> listarEventos() {
         return eventoRepository.findAll();
     }
-
-
 }

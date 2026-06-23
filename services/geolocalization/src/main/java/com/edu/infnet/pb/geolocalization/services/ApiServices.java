@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class ApiServices {
+
+    private static final Logger log = LogManager.getLogger(ApiServices.class);
 
     private final ObjectMapper objectMapper;
     private Map<String , GeoLocalizacaoDosEtadiosDTO> estadios;
@@ -57,17 +61,16 @@ public class ApiServices {
         return Mono.just(List.of());
     }
 
-
-
-// buscar os eventos da copa
+    // buscar os eventos da copa
     private final WebClient football = WebClient.builder()
-        .baseUrl("https://worldcup26.ir")
-        .build();
+            .baseUrl("https://worldcup26.ir")
+            .build();
 
+    @CircuitBreaker(name = "footballApi", fallbackMethod = "fallbackBuscarJogosCopas")
     public List<MatchDTO> buscarJogosCopas() {
 
 
-                List<MatchDTO>  jogos = football.get()
+        List<MatchDTO>  jogos = football.get()
                 .uri("/get/games")
                 .retrieve()
                 .bodyToMono(FootballResponseDTO.class)
@@ -75,15 +78,15 @@ public class ApiServices {
                 .block();
 
 
-                List<StadiumDTO> estadios = football.get()
-                        .uri("/get/stadiums")
-                        .retrieve()
-                        .bodyToMono(StadiumResponseDTO.class)
-                        .map(StadiumResponseDTO::stadiums)
-                        .block();
+        List<StadiumDTO> estadios = football.get()
+                .uri("/get/stadiums")
+                .retrieve()
+                .bodyToMono(StadiumResponseDTO.class)
+                .map(StadiumResponseDTO::stadiums)
+                .block();
 
-            Map<String , String> estadioMap = estadios.stream()
-                    .collect(Collectors.toMap(StadiumDTO::id , StadiumDTO::nome));
+        Map<String , String> estadioMap = estadios.stream()
+                .collect(Collectors.toMap(StadiumDTO::id , StadiumDTO::nome));
 
         return jogos.stream()
                 .map(jogo -> new MatchDTO(
@@ -97,6 +100,11 @@ public class ApiServices {
                         estadioMap.get(jogo.estadioId()) // nome do estadio
                 ))
                 .toList();
+    }
+
+    public List<MatchDTO> fallbackBuscarJogosCopas(Throwable t) {
+        log.error("Fallback acionado para buscarJogosCopas, erro={}", t.getMessage());
+        return List.of();
     }
 
 
@@ -116,9 +124,9 @@ public class ApiServices {
 
 
             estadios = Arrays.stream(
-                    objectMapper.readValue(is , GeoLocalizacaoDosEtadiosDTO[].class)
+                            objectMapper.readValue(is , GeoLocalizacaoDosEtadiosDTO[].class)
 
-            )
+                    )
                     .collect(Collectors.toMap(
                             estadios -> estadios.nome().toLowerCase(),
                             Function.identity()

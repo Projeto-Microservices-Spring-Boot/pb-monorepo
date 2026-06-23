@@ -4,8 +4,10 @@ import com.edu.infnet.pb.geolocalization.client.UsuarioClient;
 import com.edu.infnet.pb.geolocalization.dto.EditarEventosDTO;
 import com.edu.infnet.pb.geolocalization.dto.PerfilResponseDTO;
 import com.edu.infnet.pb.geolocalization.dto.TrocaDTO;
+import com.edu.infnet.pb.geolocalization.dto.figurinhas.TradeMatchResponseDTO;
 import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CreateTradeDTO;
 import com.edu.infnet.pb.geolocalization.dto.trocaEventos.PlacesResponseDTO;
+import com.edu.infnet.pb.geolocalization.kafka.PropostaTrocaProducer;
 import com.edu.infnet.pb.geolocalization.model.Favorito;
 import com.edu.infnet.pb.geolocalization.model.Trocas;
 import com.edu.infnet.pb.geolocalization.repository.FavoritoRepository;
@@ -16,9 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
+
 import java.util.List;
-import java.util.Set;
+
 import java.util.UUID;
 
 @Service
@@ -30,6 +32,7 @@ private final FavoritoRepository favoritoRepository;
 private final UsuarioClient usuarioClient;
 private final TrocaRepository trocaRepository;
 private final FigurinhaService figurinhaService;
+
 
     public ResponseEntity<Trocas> criarTroca(CreateTradeDTO createTradeDTO) {
         Trocas trocas = new Trocas();
@@ -90,7 +93,6 @@ private final FigurinhaService figurinhaService;
 
     }
 
-
     public ResponseEntity<Favorito> favoritarTrocas (Long eventoId , String token) {
         PerfilResponseDTO usuario = usuarioClient.buscarUusarioLogado(token);
 
@@ -109,20 +111,15 @@ private final FigurinhaService figurinhaService;
     }
 
 
-    public List<TrocaDTO> buscarMatchesNaTroca(Long trocaId, String token) {
-        List<TrocaDTO> todosMatches = figurinhaService.buscarMatches(token);
+    public List<TradeMatchResponseDTO> buscarMatchesNaTroca(Long trocaId) {
+        List<TradeMatchResponseDTO> todosMatches = figurinhaService.buscarTodosOsMatches();
         List<UUID> usuariosNaTroca = favoritoRepository.buscarUsuarioIdsPorTroca(trocaId);
         return figurinhaService.filtrarMatchesPorUsuarios(todosMatches, usuariosNaTroca);
     }
 
-
     public List<Trocas> listarTrocas() {
         return trocaRepository.findAll();
     }
-
-
-
-
 }
 
 

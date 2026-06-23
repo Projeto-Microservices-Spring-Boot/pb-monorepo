@@ -2,8 +2,8 @@ package com.edu.infnet.pb.geolocalization.controller;
 
 
 import com.edu.infnet.pb.geolocalization.dto.EditarEventosDTO;
-import com.edu.infnet.pb.geolocalization.dto.TrocaDTO;
-import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CreateEventsDTO;
+import com.edu.infnet.pb.geolocalization.dto.figurinhas.TradeMatchResponseDTO;
+import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CriacaoEventoDTO;
 import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CreateTradeDTO;
 import com.edu.infnet.pb.geolocalization.model.EventoCopa;
 import com.edu.infnet.pb.geolocalization.model.Favorito;
@@ -62,10 +62,9 @@ public class LocalizacaoController {
 
 
     @GetMapping("/trocas/{trocaId}/matches")
-    public ResponseEntity<List<TrocaDTO>> buscarMatchesNaTroca(
-            @PathVariable Long trocaId,
-            @RequestHeader("Authorization") String token) {
-        return ResponseEntity.ok(trocasServices.buscarMatchesNaTroca(trocaId, token));
+    public ResponseEntity<List<TradeMatchResponseDTO>> buscarMatchesNaTroca(
+            @PathVariable Long trocaId) {
+        return ResponseEntity.ok(trocasServices.buscarMatchesNaTroca(trocaId));
     }
 
 
@@ -74,8 +73,8 @@ public class LocalizacaoController {
     // Eventos
 
     @PostMapping("/criar/evento")
-    public ResponseEntity<Eventos> pontoEvento(@Valid @RequestBody CreateEventsDTO createEventsDTO) {
-        return eventosServices.criarEvento(createEventsDTO);
+    public ResponseEntity<Eventos> pontoEvento(@Valid @RequestBody CriacaoEventoDTO criacaoEventoDTO) {
+        return eventosServices.criarEvento(criacaoEventoDTO);
     }
 
     @GetMapping("/eventos")
@@ -108,10 +107,9 @@ public class LocalizacaoController {
 
 
     @GetMapping("/eventos/{eventoId}/matches")
-    public ResponseEntity<List<TrocaDTO>> buscarMatchesNoEvento(
-            @PathVariable Long eventoId,
-            @RequestHeader("Authorization") String token) {
-        return ResponseEntity.ok(eventosServices.buscarMatchesNoEvento(eventoId, token));
+    public ResponseEntity<List<TradeMatchResponseDTO>> buscarMatchesNoEvento(
+            @PathVariable Long eventoId) {
+        return ResponseEntity.ok(eventosServices.buscarMatchesNoEventos(eventoId));
     }
 
 

@@ -1,6 +1,6 @@
 package com.edu.infnet.pb.geolocalization.dto;
 
-import com.edu.infnet.pb.geolocalization.dto.figurinhas.FigurinhaTrocaDTO;
+import com.edu.infnet.pb.geolocalization.dto.figurinhas.FigurinhaDTO;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +15,7 @@ public record TrocaDTO(
 
         Integer quantidadeEleTem,
 
-        List<FigurinhaTrocaDTO> eleTemQueEuPreciso
+        List<FigurinhaDTO> eleTemQueEuPreciso
 
 ) {
 }
