@@ -19,11 +19,6 @@ spring:
       mode: always # sempre ira rodar os scripts SQL ao iniciar o app
       data-locations: classpath:database/seed/*.sql # local dos scripts SQL de seed
 
-jwt:
-  public:
-    key: classpath:app.key.pub
-  private:
-    key: classpath:app.key
 
 server:
   port: 8082

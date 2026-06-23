@@ -16,9 +16,8 @@ spring:
 
   sql:
     init:
-     mode: always
-     data-locations: classpath:database-sticker.seed/*.sql
-
+      mode: always
+      data-locations: classpath:database-sticker.seed/*.sql
 
 server:
   port: 8087
