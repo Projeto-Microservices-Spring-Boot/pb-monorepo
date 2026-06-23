@@ -41,4 +41,5 @@ VALUES
     -- (cenário de "sem match" — para validar que o endpoint não força
     -- um resultado quando não há troca mutuamente vantajosa)
     -- ---------------------------------------------------------
-    ('44444444-4444-4444-4444-444444444444', (SELECT id FROM stickers WHERE sticker_code = 'GER 17'), 5, now());
+    ('44444444-4444-4444-4444-444444444444', (SELECT id FROM stickers WHERE sticker_code = 'GER 17'), 5, now())
+ON CONFLICT DO NOTHING;
