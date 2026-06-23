@@ -1,0 +1,9 @@
+$kind: http-request
+name: Refresh
+url: "{{gatewayurl}}/auth/refresh"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 3962155275865275

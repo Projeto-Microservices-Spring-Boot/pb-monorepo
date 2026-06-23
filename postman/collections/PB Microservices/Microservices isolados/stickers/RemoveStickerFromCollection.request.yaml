@@ -1,0 +1,9 @@
+$kind: http-request
+name: RemoveStickerFromCollection
+url: "{{stickersurl}}/collections/album/delete/{{stickerId}}?quantity=1"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 3170

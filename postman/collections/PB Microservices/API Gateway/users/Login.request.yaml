@@ -1,0 +1,30 @@
+$kind: http-request
+name: Login
+url: "{{gatewayurl}}/auth/login"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \r
+
+    \    \"email\":\"NatanRObers@email.com\",\r
+
+    \r
+
+    \    \"password\":\"123456678\"\r
+
+    \r
+
+    }"
+scripts:
+  - type: afterResponse
+    code: |-
+      const response = pm.response.json();
+      if (response.accessToken) {
+        pm.environment.set("authtoken", response.accessToken);
+        const payload = JSON.parse(atob(response.accessToken.split('.')[1]));
+        pm.environment.set("userid", payload.sub);
+      }
+    language: text/javascript
+order: 3000

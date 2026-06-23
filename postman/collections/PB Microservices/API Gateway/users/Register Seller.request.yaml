@@ -1,0 +1,24 @@
+$kind: http-request
+name: Register Seller
+url: "{{gatewayurl}}/auth/register/seller"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \r
+
+    \    \"email\":\"NatanRObers@email.com\",\r
+
+    \r
+
+    \    \"password\":\"123456678\",\r
+
+    \r
+
+    \    \"name\":\"NatanKKKKKKKKKKKKKK\"\r
+
+    \r
+
+    }"
+order: 2500

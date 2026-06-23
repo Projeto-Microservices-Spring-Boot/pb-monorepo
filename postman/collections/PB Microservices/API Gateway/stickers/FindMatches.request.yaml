@@ -1,0 +1,9 @@
+$kind: http-request
+name: FindMatches
+url: "{{gatewayurl}}/collections/matches"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 3500

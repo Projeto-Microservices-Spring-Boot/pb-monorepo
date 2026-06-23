@@ -1,0 +1,12 @@
+$kind: http-request
+name: Update Post
+url: "{{communityurl}}/posts/{{postId}}"
+method: PUT
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+body:
+  type: json
+  content: "{\r\n    \"title\": \"Post Atualizado\",\r\n    \"content\": \"Conteúdo editado com sucesso.\"\r\n}"
+order: 5000

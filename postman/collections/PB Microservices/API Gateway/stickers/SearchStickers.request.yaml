@@ -1,0 +1,9 @@
+$kind: http-request
+name: SearchStickers
+url: "{{gatewayurl}}/stickers/search?team=Brasil"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 2300
