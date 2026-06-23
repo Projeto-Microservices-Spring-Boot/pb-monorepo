@@ -675,6 +675,35 @@
               "response": []
             },
             {
+              "name": "FindByStickerCode",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/code/{{stickerCode}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "code",
+                    "{{stickerCode}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
               "name": "UpdateSticker",
               "request": {
                 "auth": {
@@ -754,15 +783,13 @@
                   "raw": "{\n\n    \"stickerId\": 1,\n\n    \"quantity\": 2\n\n}"
                 },
                 "url": {
-                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}/stickers",
+                  "raw": "{{gatewayurl}}/collections/album",
                   "host": [
                     "{{gatewayurl}}"
                   ],
                   "path": [
-                    "stickers",
                     "collections",
-                    "{{userid}}",
-                    "stickers"
+                    "album"
                   ]
                 }
               },
@@ -784,14 +811,42 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}",
+                  "raw": "{{gatewayurl}}/collections/album",
                   "host": [
                     "{{gatewayurl}}"
                   ],
                   "path": [
-                    "stickers",
                     "collections",
-                    "{{userid}}"
+                    "album"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindCollectionStickerById",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/collections/album/{{stickerId}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "album",
+                    "{{stickerId}}"
                   ]
                 }
               },
@@ -813,14 +868,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}/progress",
+                  "raw": "{{gatewayurl}}/collections/progress",
                   "host": [
                     "{{gatewayurl}}"
                   ],
                   "path": [
-                    "stickers",
                     "collections",
-                    "{{userid}}",
                     "progress"
                   ]
                 }
@@ -843,14 +896,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}/missing",
+                  "raw": "{{gatewayurl}}/collections/missing",
                   "host": [
                     "{{gatewayurl}}"
                   ],
                   "path": [
-                    "stickers",
                     "collections",
-                    "{{userid}}",
                     "missing"
                   ]
                 }
@@ -873,15 +924,107 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}/repeated",
+                  "raw": "{{gatewayurl}}/collections/repeated",
                   "host": [
                     "{{gatewayurl}}"
                   ],
                   "path": [
-                    "stickers",
                     "collections",
-                    "{{userid}}",
                     "repeated"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GetAvailableQuantity",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/collections/album/{{stickerId}}/available-quantity",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "album",
+                    "{{stickerId}}",
+                    "available-quantity"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "RemoveStickerFromCollection",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/collections/album/delete/{{stickerId}}?quantity=1",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "album",
+                    "delete",
+                    "{{stickerId}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "quantity",
+                      "value": "1"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindMatches",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/collections/matches",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "matches"
                   ]
                 }
               },
@@ -1134,6 +1277,34 @@
                   "path": [
                     "auth",
                     "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Register Seller",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"email\":\"seller@email.com\",\n\n    \"password\":\"123456678\",\n\n    \"name\":\"Seller Name\"\n\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/auth/register/seller",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register",
+                    "seller"
                   ]
                 }
               },
@@ -1925,6 +2096,35 @@
               "response": []
             },
             {
+              "name": "FindByStickerCode",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/stickers/code/{{stickerCode}}",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "code",
+                    "{{stickerCode}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
               "name": "UpdateSticker",
               "request": {
                 "auth": {
@@ -2004,14 +2204,13 @@
                   "raw": "{\n\n    \"stickerId\": 1,\n\n    \"quantity\": 2\n\n}"
                 },
                 "url": {
-                  "raw": "{{stickersurl}}/collections/{{userid}}/stickers",
+                  "raw": "{{stickersurl}}/collections/album",
                   "host": [
                     "{{stickersurl}}"
                   ],
                   "path": [
                     "collections",
-                    "{{userid}}",
-                    "stickers"
+                    "album"
                   ]
                 }
               },
@@ -2033,13 +2232,42 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{stickersurl}}/collections/{{userid}}",
+                  "raw": "{{stickersurl}}/collections/album",
                   "host": [
                     "{{stickersurl}}"
                   ],
                   "path": [
                     "collections",
-                    "{{userid}}"
+                    "album"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindCollectionStickerById",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/collections/album/{{stickerId}}",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "album",
+                    "{{stickerId}}"
                   ]
                 }
               },
@@ -2061,13 +2289,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{stickersurl}}/collections/{{userid}}/progress",
+                  "raw": "{{stickersurl}}/collections/progress",
                   "host": [
                     "{{stickersurl}}"
                   ],
                   "path": [
                     "collections",
-                    "{{userid}}",
                     "progress"
                   ]
                 }
@@ -2090,13 +2317,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{stickersurl}}/collections/{{userid}}/missing",
+                  "raw": "{{stickersurl}}/collections/missing",
                   "host": [
                     "{{stickersurl}}"
                   ],
                   "path": [
                     "collections",
-                    "{{userid}}",
                     "missing"
                   ]
                 }
@@ -2119,14 +2345,107 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{stickersurl}}/collections/{{userid}}/repeated",
+                  "raw": "{{stickersurl}}/collections/repeated",
                   "host": [
                     "{{stickersurl}}"
                   ],
                   "path": [
                     "collections",
-                    "{{userid}}",
                     "repeated"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GetAvailableQuantity",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/collections/album/{{stickerId}}/available-quantity",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "album",
+                    "{{stickerId}}",
+                    "available-quantity"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "RemoveStickerFromCollection",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/collections/album/delete/{{stickerId}}?quantity=1",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "album",
+                    "delete",
+                    "{{stickerId}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "quantity",
+                      "value": "1"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindMatches",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/collections/matches",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "matches"
                   ]
                 }
               },
@@ -2379,6 +2698,29 @@
               "response": []
             },
             {
+              "name": "Register Seller",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"email\":\"seller_isolado@email.com\",\n\n    \"password\":\"123456678\",\n\n    \"name\":\"Seller Isolado\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{usersurl}}/auth/register/seller",
+                  "host": [
+                    "{{usersurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register",
+                    "seller"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
               "name": "Login",
               "event": [
                 {
@@ -2531,6 +2873,14 @@
     },
     {
       "key": "commentId",
+      "value": ""
+    },
+    {
+      "key": "stickerId",
+      "value": ""
+    },
+    {
+      "key": "stickerCode",
       "value": ""
     }
   ]

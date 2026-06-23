@@ -1,6 +1,6 @@
 $kind: http-request
 name: FindRepeatedStickers
-url: "{{gatewayurl}}/stickers/collections/{{userid}}/repeated"
+url: "{{gatewayurl}}/collections/repeated"
 method: GET
 auth:
   type: bearer

@@ -1,0 +1,9 @@
+$kind: http-request
+name: GetAvailableQuantity
+url: "{{gatewayurl}}/collections/album/{{stickerId}}/available-quantity"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 3160

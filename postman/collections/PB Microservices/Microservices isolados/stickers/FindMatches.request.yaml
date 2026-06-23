@@ -1,9 +1,9 @@
 $kind: http-request
-name: FindUserCollection
-url: "{{stickersurl}}/collections/album"
+name: FindMatches
+url: "{{stickersurl}}/collections/matches"
 method: GET
 auth:
   type: bearer
   credentials:
     token: "{{authtoken}}"
-order: 3100
+order: 3500

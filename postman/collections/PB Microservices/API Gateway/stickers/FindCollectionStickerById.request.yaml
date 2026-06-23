@@ -1,0 +1,9 @@
+$kind: http-request
+name: FindCollectionStickerById
+url: "{{gatewayurl}}/collections/album/{{stickerId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 3150

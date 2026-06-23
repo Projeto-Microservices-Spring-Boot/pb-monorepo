@@ -1,6 +1,6 @@
 $kind: http-request
 name: GetAlbumProgress
-url: "{{gatewayurl}}/stickers/collections/{{userid}}/progress"
+url: "{{gatewayurl}}/collections/progress"
 method: GET
 auth:
   type: bearer
