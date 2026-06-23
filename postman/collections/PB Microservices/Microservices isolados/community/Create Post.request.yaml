@@ -1,0 +1,12 @@
+$kind: http-request
+name: Create Post
+url: "{{communityurl}}/posts"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+body:
+  type: json
+  content: "{\r\n    \"title\": \"Primeiro post pelo monorepo!\",\r\n    \"content\": \"A arquitetura e o Docker Compose unificado estão 100% online.\"\r\n}"
+order: 2000

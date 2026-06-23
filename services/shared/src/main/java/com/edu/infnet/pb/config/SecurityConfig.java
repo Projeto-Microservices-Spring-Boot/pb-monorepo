@@ -42,6 +42,16 @@ public class SecurityConfig {
         .httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/actuator/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/auth/register/seller").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                    .anyRequest().authenticated())
+            .httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable())
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
     return http.build();
   }
 

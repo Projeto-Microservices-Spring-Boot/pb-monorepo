@@ -29,10 +29,19 @@ services:
     routes:
       - name: community
         paths:
-          - /community
-        strip_path: true
+          - /comments
+          - /posts
+        strip_path: false
         protocols:
           - http
+          - https
+        plugins:
+          - name: jwt
+            config:
+              header_names:
+                - authorization
+              claims_to_verify: [exp]
+              key_claim_name: iss
 
       - name: community-docs
         paths: ["/docs/community"]
@@ -86,6 +95,7 @@ services:
       - name: users.public
         paths:
           - /auth/register
+          - /auth/register/seller
           - /auth/login
         strip_path: false
         protocols:

@@ -46,7 +46,7 @@ public class AuthService {
 
     if (userAlreadyExists.isPresent()) {
       logger.error("Erro ao criar conta, usuário já existente");
-      throw new ConflictException("Erro ao criar conta, usuário já existente");
+      throw new ConflictException("Erro ao criar conta, usuário já existente!");
     }
 
     var user = new User();
@@ -62,6 +62,30 @@ public class AuthService {
         createdUser.getName(),
         createdUser.getEmail(),
         createdUser.getRoles());
+  }
+
+  @Transactional
+  public RegisterResponseDto registerSeller(RegisterRequestDto registerRequest) {
+    var sellerUserAlreadyExists = repo.findByEmail(registerRequest.email());
+
+    if (sellerUserAlreadyExists.isPresent()) {
+      logger.error("Erro ao criar conta, usuário vendedor já existente");
+      throw new ConflictException("Erro ao criar conta, usuário vendedor já existente!");
+    }
+
+    var sellerUser = new User();
+    sellerUser.setName(registerRequest.name());
+    sellerUser.setEmail(registerRequest.email());
+    sellerUser.setPassword(bcrypt.encode(registerRequest.password()));
+    sellerUser.setRoles(Roles.SELLER);
+
+    var createdSellerUser = repo.save(sellerUser);
+
+    logger.info("Usuário Vendedor criado com sucesso!");
+    return new RegisterResponseDto(
+        createdSellerUser.getName(),
+        createdSellerUser.getEmail(),
+        createdSellerUser.getRoles());
   }
 
   @Transactional

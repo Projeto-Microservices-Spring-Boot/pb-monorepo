@@ -1,0 +1,2537 @@
+{
+  "info": {
+    "_postman_id": "cdf1aca3-ba51-4fb7-b4aa-97cd36a2652a",
+    "name": "PB Microservices Copy",
+    "description": "Coleção base para validar os microservices isolados e os mesmos fluxos expostos pelo API Gateway do Kong",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53990439",
+    "_collection_link": "https://go.postman.co/collection/53990439-cdf1aca3-ba51-4fb7-b4aa-97cd36a2652a?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "API Gateway",
+      "item": [
+        {
+          "name": "adm-dashboard",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayurl}}/adm-dashboard/actuator/health",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "adm-dashboard",
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "community",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayurl}}/community/actuator/health",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "community",
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Post",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"title\": \"Primeiro post pelo monorepo!\",\n    \"content\": \"A arquitetura e o Docker Compose unificado estão 100% online.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/community/posts",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "community",
+                    "posts"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Feed",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/community/posts?page=0&size=20",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "community",
+                    "posts"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Post by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/community/posts/{{postId}}?page=0&size=50",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "community",
+                    "posts",
+                    "{{postId}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "50"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Post",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"title\": \"Post Atualizado\",\n    \"content\": \"Conteúdo editado com sucesso.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/community/posts/{{postId}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "community",
+                    "posts",
+                    "{{postId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Post",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/community/posts/{{postId}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "community",
+                    "posts",
+                    "{{postId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Comment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"postId\": \"{{postId}}\",\n    \"content\": \"Muito legal! Excelente trabalho.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/community/comments",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "community",
+                    "comments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Comment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/community/comments/{{commentId}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "community",
+                    "comments",
+                    "{{commentId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "SQS Receive Message",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4566/000000000000/community-notification-queue?Action=ReceiveMessage&MaxNumberOfMessages=1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4566",
+                  "path": [
+                    "000000000000",
+                    "community-notification-queue"
+                  ],
+                  "query": [
+                    {
+                      "key": "Action",
+                      "value": "ReceiveMessage"
+                    },
+                    {
+                      "key": "MaxNumberOfMessages",
+                      "value": "1"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "geolocalization",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayurl}}/geolocalization/actuator/health",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "geolocalization",
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "payments",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayurl}}/actuator/health",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreatePayment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"amount\": 100.50,\n\n    \"method\": \"CREDIT_CARD\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/payments",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "payments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindPaymentById",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/payments/{{paymentid}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "{{paymentid}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindMyPayments",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/payments/my",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "my"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CancelPayment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/payments/{{paymentid}}/cancel",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "{{paymentid}}",
+                    "cancel"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "profile",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayurl}}/profile/actuator/health",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "stickers",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayurl}}/actuator/health",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateSticker",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"stickerCode\": \"BRA-01\",\n\n    \"name\": \"Neymar Jr\",\n\n    \"team\": \"Brasil\",\n\n    \"type\": \"PLAYER_STICKER\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindAllStickers",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindStickerById",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/1",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "SearchStickers",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/search?team=Brasil",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "search"
+                  ],
+                  "query": [
+                    {
+                      "key": "team",
+                      "value": "Brasil"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "UpdateSticker",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \n\n    \"stickerCode\": \"BRA-01\",\n\n    \n\n    \"name\": \"Neymar Silva Jr\",\n\n    \n\n    \"team\": \"Brasil\",\n\n    \n\n    \"type\": \"PLAYER_STICKER\"\n\n    \n\n}"
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/1",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DeleteSticker",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/1",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "AddStickerToCollection",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"stickerId\": 1,\n\n    \"quantity\": 2\n\n}"
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}/stickers",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "collections",
+                    "{{userid}}",
+                    "stickers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindUserCollection",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "collections",
+                    "{{userid}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GetAlbumProgress",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}/progress",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "collections",
+                    "{{userid}}",
+                    "progress"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindMissingStickers",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}/missing",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "collections",
+                    "{{userid}}",
+                    "missing"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindRepeatedStickers",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/collections/{{userid}}/repeated",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "collections",
+                    "{{userid}}",
+                    "repeated"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateTradeProposal",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"proposerId\": \"{{userid}}\",\n\n    \"receiverId\": \"00000000-0000-0000-0000-000000000000\",\n\n    \"message\": \"Quero trocar!\",\n\n    \"offeredStickers\": [\n\n        {\"stickerId\": 1, \"quantity\": 1}\n\n    ],\n\n    \"requestedSticker\": [\n\n        {\"stickerId\": 2, \"quantity\": 1}\n\n    ]\n\n}"
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/trades",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "trades"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindTradeById",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/trades/1",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "trades",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "AcceptTradeProposal",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"meetingLocation\": \"Praça Central\",\n\n    \"meetingAt\": \"2026-06-20T15:00:00\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/trades/1/accept?receiverId={{userid}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "trades",
+                    "1",
+                    "accept"
+                  ],
+                  "query": [
+                    {
+                      "key": "receiverId",
+                      "value": "{{userid}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "RejectTradeProposal",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/trades/1/reject?receiverId={{userid}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "trades",
+                    "1",
+                    "reject"
+                  ],
+                  "query": [
+                    {
+                      "key": "receiverId",
+                      "value": "{{userid}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CancelTradeProposal",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/stickers/trades/1/cancel?userId={{userid}}",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "trades",
+                    "1",
+                    "cancel"
+                  ],
+                  "query": [
+                    {
+                      "key": "userId",
+                      "value": "{{userid}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "store",
+          "item": [
+            {
+              "name": "GET Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayurl}}/store/actuator/health",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "store",
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "users",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/actuator/health",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Register",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"email\":\"natan@email.com\",\n\n    \"password\":\"123456678\",\n\n    \"name\":\"natan\"\n\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/auth/register",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "if (response.accessToken) {",
+                      "  pm.environment.set(\"authtoken\", response.accessToken);",
+                      "  const payload = JSON.parse(atob(response.accessToken.split('.')[1]));",
+                      "  pm.environment.set(\"userid\", payload.sub);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"email\":\"natan@email.com\",\n\n    \"password\":\"123456678\"\n\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{gatewayurl}}/auth/login",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Profile",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/me",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "me"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/auth/logout",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Refresh",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayurl}}/auth/refresh",
+                  "host": [
+                    "{{gatewayurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Microserviços isolados",
+      "item": [
+        {
+          "name": "adm-dashboard",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{addashboardurl}}/actuator/health",
+                  "host": [
+                    "{{addashboardurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "community",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{communityurl}}/actuator/health",
+                  "host": [
+                    "{{communityurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Post",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"title\": \"Primeiro post pelo monorepo!\",\n    \"content\": \"A arquitetura e o Docker Compose unificado estão 100% online.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{communityurl}}/posts",
+                  "host": [
+                    "{{communityurl}}"
+                  ],
+                  "path": [
+                    "posts"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Feed",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{communityurl}}/posts?page=0&size=20",
+                  "host": [
+                    "{{communityurl}}"
+                  ],
+                  "path": [
+                    "posts"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Post by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{communityurl}}/posts/{{postId}}?page=0&size=50",
+                  "host": [
+                    "{{communityurl}}"
+                  ],
+                  "path": [
+                    "posts",
+                    "{{postId}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "50"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Post",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"title\": \"Post Atualizado\",\n    \"content\": \"Conteúdo editado com sucesso.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{communityurl}}/posts/{{postId}}",
+                  "host": [
+                    "{{communityurl}}"
+                  ],
+                  "path": [
+                    "posts",
+                    "{{postId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Post",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{communityurl}}/posts/{{postId}}",
+                  "host": [
+                    "{{communityurl}}"
+                  ],
+                  "path": [
+                    "posts",
+                    "{{postId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Comment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"postId\": \"{{postId}}\",\n    \"content\": \"Muito legal! Excelente trabalho.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{communityurl}}/comments",
+                  "host": [
+                    "{{communityurl}}"
+                  ],
+                  "path": [
+                    "comments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Comment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{communityurl}}/comments/{{commentId}}",
+                  "host": [
+                    "{{communityurl}}"
+                  ],
+                  "path": [
+                    "comments",
+                    "{{commentId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "SQS Receive Message",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:4566/000000000000/community-notification-queue?Action=ReceiveMessage&MaxNumberOfMessages=1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "4566",
+                  "path": [
+                    "000000000000",
+                    "community-notification-queue"
+                  ],
+                  "query": [
+                    {
+                      "key": "Action",
+                      "value": "ReceiveMessage"
+                    },
+                    {
+                      "key": "MaxNumberOfMessages",
+                      "value": "1"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "eureka",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{eurekaurl}}/actuator/health",
+                  "host": [
+                    "{{eurekaurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "geolocalization",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{geolocalizationurl}}/actuator/health",
+                  "host": [
+                    "{{geolocalizationurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "payments",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{paymentsurl}}/actuator/health",
+                  "host": [
+                    "{{paymentsurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreatePayment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"amount\": 100.50,\n\n    \"method\": \"CREDIT_CARD\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{paymentsurl}}/payments",
+                  "host": [
+                    "{{paymentsurl}}"
+                  ],
+                  "path": [
+                    "payments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindPaymentById",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{paymentsurl}}/payments/{{paymentid}}",
+                  "host": [
+                    "{{paymentsurl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "{{paymentid}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindMyPayments",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{paymentsurl}}/payments/my",
+                  "host": [
+                    "{{paymentsurl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "my"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CancelPayment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{paymentsurl}}/payments/{{paymentid}}/cancel",
+                  "host": [
+                    "{{paymentsurl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "{{paymentid}}",
+                    "cancel"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "stickers",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{stickersurl}}/actuator/health",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateSticker",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"stickerCode\": \"BRA-01\",\n\n    \"name\": \"Neymar Jr\",\n\n    \"team\": \"Brasil\",\n\n    \"type\": \"PLAYER_STICKER\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{stickersurl}}/stickers",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "stickers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindAllStickers",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/stickers",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "stickers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindStickerById",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/stickers/1",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "SearchStickers",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/stickers/search?team=Brasil",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "search"
+                  ],
+                  "query": [
+                    {
+                      "key": "team",
+                      "value": "Brasil"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "UpdateSticker",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"stickerCode\": \"BRA-01\",\n\n    \"name\": \"Neymar Jr\",\n\n    \"team\": \"Brasil\",\n\n    \"type\": \"PLAYER_STICKER\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{stickersurl}}/stickers/1",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DeleteSticker",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/stickers/1",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "stickers",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "AddStickerToCollection",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"stickerId\": 1,\n\n    \"quantity\": 2\n\n}"
+                },
+                "url": {
+                  "raw": "{{stickersurl}}/collections/{{userid}}/stickers",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "{{userid}}",
+                    "stickers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindUserCollection",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/collections/{{userid}}",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "{{userid}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GetAlbumProgress",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/collections/{{userid}}/progress",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "{{userid}}",
+                    "progress"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindMissingStickers",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/collections/{{userid}}/missing",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "{{userid}}",
+                    "missing"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindRepeatedStickers",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/collections/{{userid}}/repeated",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "{{userid}}",
+                    "repeated"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CreateTradeProposal",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"proposerId\": \"{{userid}}\",\n\n    \"receiverId\": \"00000000-0000-0000-0000-000000000000\",\n\n    \"message\": \"Quero trocar!\",\n\n    \"offeredStickers\": [\n\n        {\"stickerId\": 1, \"quantity\": 1}\n\n    ],\n\n    \"requestedSticker\": [\n\n        {\"stickerId\": 2, \"quantity\": 1}\n\n    ]\n\n}"
+                },
+                "url": {
+                  "raw": "{{stickersurl}}/trades",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "trades"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "FindTradeById",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/trades/1",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "trades",
+                    "1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "AcceptTradeProposal",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"meetingLocation\": \"Praça Central\",\n\n    \"meetingAt\": \"2026-06-20T15:00:00\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{stickersurl}}/trades/1/accept?receiverId={{userid}}",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "trades",
+                    "1",
+                    "accept"
+                  ],
+                  "query": [
+                    {
+                      "key": "receiverId",
+                      "value": "{{userid}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "RejectTradeProposal",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/trades/1/reject?receiverId={{userid}}",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "trades",
+                    "1",
+                    "reject"
+                  ],
+                  "query": [
+                    {
+                      "key": "receiverId",
+                      "value": "{{userid}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "CancelTradeProposal",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{stickersurl}}/trades/1/cancel?userId={{userid}}",
+                  "host": [
+                    "{{stickersurl}}"
+                  ],
+                  "path": [
+                    "trades",
+                    "1",
+                    "cancel"
+                  ],
+                  "query": [
+                    {
+                      "key": "userId",
+                      "value": "{{userid}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "store",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{storeurl}}/actuator/health",
+                  "host": [
+                    "{{storeurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "users",
+          "item": [
+            {
+              "name": "Health",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{usersurl}}/actuator/health ",
+                  "host": [
+                    "{{usersurl}}"
+                  ],
+                  "path": [
+                    "actuator",
+                    "health "
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Register",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"email\":\"nathan_vasco2@email.com\",\n\n    \"password\":\"123456678\",\n\n    \"name\":\"Nathankkkkkk\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{usersurl}}/auth/register",
+                  "host": [
+                    "{{usersurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "if (response.accessToken) {",
+                      "  pm.environment.set(\"authtoken\", response.accessToken);",
+                      "  const payload = JSON.parse(atob(response.accessToken.split('.')[1]));",
+                      "  pm.environment.set(\"userid\", payload.sub);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\n    \"email\":\"nathan_vasco2@email.com\",\n\n    \"password\":\"123456678\"\n\n}"
+                },
+                "url": {
+                  "raw": "{{usersurl}}/auth/login",
+                  "host": [
+                    "{{usersurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Profile",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{usersurl}}/me",
+                  "host": [
+                    "{{usersurl}}"
+                  ],
+                  "path": [
+                    "me"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authtoken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{usersurl}}/auth/logout",
+                  "host": [
+                    "{{usersurl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "gatewayurl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "eurekaurl",
+      "value": "http://localhost:8761"
+    },
+    {
+      "key": "addashboardurl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "usersurl",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "communityurl",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "geolocalizationurl",
+      "value": "http://localhost:8084"
+    },
+    {
+      "key": "paymentsurl",
+      "value": "http://localhost:8085"
+    },
+    {
+      "key": "stickersurl",
+      "value": "http://localhost:8087"
+    },
+    {
+      "key": "storeurl",
+      "value": "http://localhost:8088"
+    },
+    {
+      "key": "paymentid",
+      "value": ""
+    },
+    {
+      "key": "authtoken",
+      "value": ""
+    },
+    {
+      "key": "userid",
+      "value": ""
+    },
+    {
+      "key": "postId",
+      "value": ""
+    },
+    {
+      "key": "commentId",
+      "value": ""
+    }
+  ]
+}
