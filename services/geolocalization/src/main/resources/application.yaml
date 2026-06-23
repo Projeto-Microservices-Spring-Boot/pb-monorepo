@@ -13,6 +13,23 @@ spring:
       ddl-auto: update
     show-sql: true
 
+
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: teste-local
+      auto-offset-reset: earliest
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
+
+
 server:
   port: 8084
 
@@ -61,3 +78,5 @@ otel:
     exporter: none
   logs:
     exporter: none
+
+

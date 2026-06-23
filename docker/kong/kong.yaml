@@ -54,11 +54,20 @@ services:
     routes:
       - name: geolocalization-routes
         paths:
-          - /geolocalization
-        strip_path: true
+           - /maps
+           - /figurinhas
+           - /api/maps
+        strip_path: false
         protocols:
           - http
-
+          - https
+        plugins:
+          - name: jwt
+            config:
+              header_names:
+                - authorization # Lê o token do header Authorization
+              claims_to_verify: [ exp ] # Verifica se o token não está expirado
+              key_claim_name: iss # Usa o campo "iss" do token para identificar o consumer
       - name: geolocalization-docs
         paths: ["/docs/geolocalization"]
         strip_path: true
