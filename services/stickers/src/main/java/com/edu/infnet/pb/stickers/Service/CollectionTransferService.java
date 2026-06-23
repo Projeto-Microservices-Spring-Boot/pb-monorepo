@@ -9,31 +9,41 @@ import org.springframework.transaction.annotation.Transactional;
 public class CollectionTransferService {
     private final StickerCollectionService collectionService;
 
+
+
+
     @Transactional
     public void applyTransfer(PropostaAceitaEvent event) {
         // usuarioOrigem perde o que ofereceu, e ganha o que usuarioDestino ofereceu
-        collectionService.removeQuantity(
-                event.getUsuarioOrigem(),
-                event.getStickerOferecidoOrigem(),
-                event.getQuantidadeOferecidaOrigem()
+        event.getStickerOferecidoOrigem().forEach(sticker ->
+                collectionService.removeQuantity(
+                        event.getUsuarioOrigem(),
+                        sticker.getStickerId(),
+                        sticker.getQuantidadeOferecida()
+                )
         );
-        collectionService.addSticker(
-                event.getUsuarioOrigem(),
-                event.getStickerOferecidoDestino(),
-                event.getQuantidadeOferecidaDestino()
+        event.getStickerOferecidoDestino().forEach(sticker ->
+                collectionService.addSticker(
+                        event.getUsuarioOrigem(),
+                        sticker.getStickerId(),
+                        sticker.getQuantidadeOferecida()
+                )
         );
 
         // usuarioDestino perde o que ofereceu, e ganha o que usuarioOrigem ofereceu
-        collectionService.removeQuantity(
-                event.getUsuarioDestino(),
-                event.getStickerOferecidoDestino(),
-                event.getQuantidadeOferecidaDestino()
+        event.getStickerOferecidoDestino().forEach(sticker ->
+                collectionService.removeQuantity(
+                        event.getUsuarioDestino(),
+                        sticker.getStickerId(),
+                        sticker.getQuantidadeOferecida()
+                )
         );
-        collectionService.addSticker(
-                event.getUsuarioDestino(),
-                event.getStickerOferecidoOrigem(),
-                event.getQuantidadeOferecidaOrigem()
+        event.getStickerOferecidoOrigem().forEach(sticker ->
+                collectionService.addSticker(
+                        event.getUsuarioDestino(),
+                        sticker.getStickerId(),
+                        sticker.getQuantidadeOferecida()
+                )
         );
     }
 }
-
