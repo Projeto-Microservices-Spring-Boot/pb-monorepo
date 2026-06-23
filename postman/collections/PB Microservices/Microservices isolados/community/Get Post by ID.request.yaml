@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Post by ID
+url: "{{communityurl}}/posts/{{postId}}?page=0&size=50"
+method: GET
+order: 4000

@@ -18,6 +18,18 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        max.block.ms: 2000
+    consumer:
+      group-id: payments-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: com.edu.infnet.pb.payments.dto
+        spring.json.value.default.type: com.edu.infnet.pb.payments.dto.OrderPaymentRequestedEvent
+        spring.json.use.type.headers: false
 
 server:
   port: 8085
@@ -47,7 +59,7 @@ logging:
 management:
   tracing:
     sampling:
-      probability: 1.0 # 100% dos tracings gerados será exportado
+      probability: 1.0
 
   endpoints:
     web:
@@ -56,6 +68,13 @@ management:
           - health
           - prometheus
           - info
+
+resilience4j:
+  retry:
+    instances:
+      kafka-publisher:
+        max-attempts: 3
+        wait-duration: 500ms
 
 otel:
   exporter:
@@ -67,9 +86,3 @@ otel:
     exporter: none
   logs:
     exporter: none
-
-jwt:
-  public:
-    key: classpath:app.key.pub
-  private:
-    key: classpath:app.key

@@ -1,14 +1,8 @@
 name: pb-monorepo
 
-volumes:
-  pg_data:
-  redis_data:
-  kafka_data:
-  grafana_data:
-
 services:
   # ---------------------------------------------------------------------------
-  # PostgreSQL
+  # INFRAESTRUTURA COMPARTILHADA (Bancos, Cache, Mensageria, API Gateway)
   # ---------------------------------------------------------------------------
   pg:
     image: postgres:18.3-alpine
@@ -27,9 +21,6 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
 
-  # ---------------------------------------------------------------------------
-  # Redis
-  # ---------------------------------------------------------------------------
   redis:
     image: redis:7.4-alpine
     container_name: pb_cache
@@ -43,28 +34,23 @@ services:
       timeout: 3s
       retries: 20
 
-  # ---------------------------------------------------------------------------
-  # Kong API Gateway
-  # ---------------------------------------------------------------------------
   kong:
     image: kong:3.9.1
     container_name: pb_kong
     environment:
-      KONG_DATABASE: "off" # Modo DB-less -> (kong sem banco de dados)
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001 # Admin API -> escuta todas interfaces na porta 8001
-      KONG_ADMIN_GUI_URL: http://localhost:8002 # URL da UI
-      KONG_DECLARATIVE_CONFIG: /kong/kong.yaml # Caminho do arquivo de config do Kong
-
-      # Logs do Kong API Gateway
+      KONG_DATABASE: "off"
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yaml
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
     ports:
-      - "8000:8000" # Proxy (API)
-      - "8001:8001" # API (Admin)
-      - "8002:8002" # UI -> http://localhost:8002
-      - "8443:8443" # Proxy SSL (HTTPs)
-      - "8444:8444" # API (Admin) (HTTPs)
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+      - "8443:8443"
+      - "8444:8444"
     volumes:
       - ./kong:/kong:ro
     healthcheck:
@@ -73,34 +59,23 @@ services:
       timeout: 5s
       retries: 10
 
-  # ---------------------------------------------------------------------------
-  # Kafka (KRaft) + Kafka UI
-  # ---------------------------------------------------------------------------
   kafka:
     image: confluentinc/cp-kafka:7.8.0
     container_name: pb_kafka
     ports:
-      - "9092:9092" # -> localhost
-      - "29092:29092" # ->  rede interna
-      - "29093:29093" # ->  controller
+      - "9092:9092"
+      - "29092:29092"
+      - "29093:29093"
     environment:
-      CLUSTER_ID: XVmXn3yFSg-B4UD_uAgnCw # -> ID único do cluster
-      KAFKA_NODE_ID: "1" # -> ID único do broker
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false" # -> cria tópicos automaticamente ao usá-los (desligar em prod)
-      KAFKA_PROCESS_ROLES: "broker,controller" # -> define que este node é broker + controller
-
-      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER" #  -> nome do listener usado pelo controller
-      # QUORUM_VOTERS -> elege o Controller master do cluster quando o atual cai
+      CLUSTER_ID: XVmXn3yFSg-B4UD_uAgnCw
+      KAFKA_NODE_ID: "1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
-
-      # PLAINTEXT 9092 → escuta na rede interna do container
-      # PLAINTEXT_HOST 29092 → escuta no localhost
-      # CONTROLLER 29093 → escuta o controller na rede interna do container
       KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:29093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-
-      # Configurações de replicação para tópicos do Kafka definidas como "1" para ambiente de dev
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
@@ -123,18 +98,12 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
       DYNAMIC_CONFIG_ENABLED: "true"
 
-  # ---------------------------------------------------------------------------
-  # Toxiproxy
-  # ---------------------------------------------------------------------------
   toxiproxy:
     image: ghcr.io/shopify/toxiproxy
     container_name: pb_toxiproxy
     ports:
       - "8474:8474"
 
-  # ---------------------------------------------------------------------------
-  # Prometheus + Grafana
-  # ---------------------------------------------------------------------------
   prometheus:
     image: prom/prometheus:v3.11.3
     container_name: pb_prometheus
@@ -155,24 +124,17 @@ services:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
 
-  # ---------------------------------------------------------------------------
-  # Jaeger Tracing
-  # ---------------------------------------------------------------------------
-
   jaeger:
     container_name: pb_tracing
     image: jaegertracing/all-in-one:1.57
     ports:
-      - "16686:16686" # UI
-      - "14268:14268" # Traces HTTP
-      - "4317:4317" # OTLP/gRPC
-      - "4318:4318" # OTLP/HTTP
+      - "16686:16686"
+      - "14268:14268"
+      - "4317:4317"
+      - "4318:4318"
     environment:
       COLLECTOR_OTLP_ENABLED: true
 
-  # ---------------------------------------------------------------------------
-  # Swagger UI — Documentação centralizada dos microservices
-  # ---------------------------------------------------------------------------
   swagger-ui:
     image: swaggerapi/swagger-ui:v5.18.3
     container_name: pb_swagger-ui
@@ -202,9 +164,44 @@ services:
       retries: 5
 
   # ---------------------------------------------------------------------------
-  # Microservices + Eureka Server
+  # INFRAESTRUTURA ESPECÍFICA DA COMUNIDADE (MongoDB + LocalStack)
   # ---------------------------------------------------------------------------
+  mongodb:
+    image: mongo:7.0.5
+    container_name: pb_community_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: community
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  localstack:
+    image: localstack/localstack:3.2
+    container_name: pb_localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: sns,sqs
+      DEFAULT_REGION: us-east-1
+      PERSISTENCE: 1
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ../services/community/infra/localstack-init.sh:/etc/localstack/init/ready.d/init.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # MICROSSERVIÇOS JAVA
+  # ---------------------------------------------------------------------------
   eureka:
     container_name: eureka-server
     build:
@@ -239,7 +236,7 @@ services:
   users:
     container_name: users-service
     build:
-      context: ../ # raiz do monorepo
+      context: ../ 
       dockerfile: services/users/Dockerfile
     ports:
       - "8082:8082"
@@ -255,19 +252,34 @@ services:
          condition: service_healthy  
 
   community:
-    container_name: community-server
+    container_name: community-service
     build:
       context: ../services/community/
       dockerfile: Dockerfile
     ports:
       - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8083
+      MONGODB_URI: mongodb://mongodb:27017/community
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_SNS_ENDPOINT: http://localstack:4566
+      AWS_SQS_ENDPOINT: http://localstack:4566
+      SNS_TOPIC_COMMUNITY_EVENTS_ARN: arn:aws:sns:us-east-1:000000000000:community-events-topic
+      SQS_QUEUE_MODERATION: community-moderation-queue
+      SQS_QUEUE_NOTIFICATION: community-notification-queue
+      JWT_PUBLIC_KEY: classpath:keys/public.pem
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
       interval: 10s
       timeout: 10s
       retries: 4
     depends_on:
-      pg:
+      mongodb:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
       kong: 
          condition: service_healthy  
@@ -307,14 +319,14 @@ services:
         condition: service_healthy
       kong: 
          condition: service_healthy
-      kafka:
-        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
 
   stickers:
     container_name: stickers-service
     build:
-      context: ../services/stickers/
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: services/stickers/Dockerfile
     ports:
       - "8087:8087"
     healthcheck:
@@ -326,7 +338,9 @@ services:
       pg:
         condition: service_healthy
       kong: 
-         condition: service_healthy  
+         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   store:
     container_name: store-service
@@ -345,3 +359,14 @@ services:
         condition: service_healthy
       kong: 
          condition: service_healthy  
+
+# ---------------------------------------------------------------------------
+# VOLUMES COMPARTILHADOS
+# ---------------------------------------------------------------------------
+volumes:
+  pg_data:
+  redis_data:
+  kafka_data:
+  grafana_data:
+  mongo-data:
+  localstack-data:

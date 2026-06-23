@@ -12,5 +12,7 @@
     <modules>
         <module>services/shared</module>
         <module>services/users</module>
+        <module>services/stickers</module>
+        <module>services/payments</module>
     </modules>
 </project>

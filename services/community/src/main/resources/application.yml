@@ -1,0 +1,101 @@
+spring:
+  application:
+    name: community-service
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/community}
+
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION:us-east-1}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID:}
+        secret-key: ${AWS_SECRET_ACCESS_KEY:}
+      sns:
+        endpoint: ${AWS_SNS_ENDPOINT:}
+      sqs:
+        endpoint: ${AWS_SQS_ENDPOINT:}
+      stack:
+        auto: false
+
+server:
+  port: ${SERVER_PORT:8083}
+
+# Chave pública RSA para validar JWT — mesma usada por todos os microserviços.
+jwt:
+  public:
+    key: ${JWT_PUBLIC_KEY:classpath:keys/public.pem}
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  sns:
+    topic:
+      community-events: ${SNS_TOPIC_COMMUNITY_EVENTS_ARN:arn:aws:sns:us-east-1:000000000000:community-events-topic}
+  sqs:
+    queue:
+      moderation: ${SQS_QUEUE_MODERATION:community-moderation-queue}
+      notification: ${SQS_QUEUE_NOTIFICATION:community-notification-queue}
+    listener:
+      visibility-timeout-seconds: 30
+      message-retention-days: 4
+      max-receive-count: 5
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.ecommerce.community: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    root: INFO
+    com.ecommerce.community: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/community-test}
+
+logging:
+  level:
+    root: WARN
+    com.ecommerce.community: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+logging:
+  level:
+    root: WARN
+    com.ecommerce.community: INFO

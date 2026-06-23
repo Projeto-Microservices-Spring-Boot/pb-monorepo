@@ -8,15 +8,13 @@ RUN apk add --no-cache curl
 
 WORKDIR /build
 
-COPY pom.xml .
-
-# Copia o módulo shared pois o Maven precisa do código fonte dele
-COPY services/shared services/shared  
-COPY services/users services/users
-
-# -pl diz ao Maven qual módulo buildar
-# -am faz o Maven compilar o shared antes do users
-RUN mvn clean package -pl services/users -am -DskipTests -B  
+COPY pom.xml /build/pom.xml
+COPY services/users /build/services/users
+COPY services/shared /build/services/shared
+# Remove stickers e outros que não existem
+RUN sed -i '/services\/stickers/d' /build/pom.xml \
+    && sed -i '/services\/payments/d' /build/pom.xml \
+    && mvn clean package -pl services/users -am -DskipTests -B
 
 FROM eclipse-temurin:${ECLIPSE_TEMURIN_VERSION_JRE} AS run
 

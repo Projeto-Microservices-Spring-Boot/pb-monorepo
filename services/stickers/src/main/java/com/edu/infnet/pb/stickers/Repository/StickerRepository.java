@@ -38,4 +38,5 @@ public interface StickerRepository extends JpaRepository<Sticker, Long> {
             @Param("playerName") String playerName
     );
 
+    boolean existsByStickerCode(String stickerCode);
 }
