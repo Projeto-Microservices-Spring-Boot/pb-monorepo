@@ -5,7 +5,7 @@ RUN apk add --no-cache curl
 
 WORKDIR /build
 
-COPY  pom.xml .
+COPY pom.xml .
 
 RUN mvn dependency:go-offline -B
 
@@ -13,14 +13,17 @@ FROM deps AS build
 
 COPY src ./src
 
-RUN mvn clean package -DskipTests 
+RUN mvn clean package -DskipTests
 
-FROM  eclipse-temurin:25-jre-alpine AS run
+FROM eclipse-temurin:25-jre-alpine AS run
+
+RUN apk add --no-cache curl
 
 WORKDIR /app
 
-COPY --from=build /build/target/*.jar app.jar
+COPY --from=build /build/target/store-*.jar app.jar
+
 
 EXPOSE 8088
 
-CMD [ "java" , "-jar", "app.jar" ]
+CMD ["java", "-jar", "app.jar"]

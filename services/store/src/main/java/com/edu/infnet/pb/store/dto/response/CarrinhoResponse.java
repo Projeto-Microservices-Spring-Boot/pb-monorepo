@@ -10,12 +10,4 @@ public record CarrinhoResponse(
         BigDecimal total,
         int quantidadeItens
 ) {
-    public record ItemCarrinhoResponse(
-            Long id,
-            Long produtoId,
-            String produtoNome,
-            Integer quantidade,
-            BigDecimal precoUnitario,
-            BigDecimal subtotal
-    ) {}
 }

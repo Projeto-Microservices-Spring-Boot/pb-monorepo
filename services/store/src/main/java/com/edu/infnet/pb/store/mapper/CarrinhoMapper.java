@@ -3,7 +3,7 @@ package com.edu.infnet.pb.store.mapper;
 import com.edu.infnet.pb.store.domain.carrinho.Carrinho;
 import com.edu.infnet.pb.store.domain.carrinho.ItemCarrinho;
 import com.edu.infnet.pb.store.dto.response.CarrinhoResponse;
-import com.edu.infnet.pb.store.dto.response.CarrinhoResponse.ItemCarrinhoResponse;
+import com.edu.infnet.pb.store.dto.response.ItemCarrinhoResponse;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

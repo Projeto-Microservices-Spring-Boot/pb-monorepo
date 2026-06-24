@@ -23,7 +23,7 @@ public class StockEventConsumer {
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "stock.updated", groupId = "store-group")
+    @KafkaListener(topics = "stock-updated", groupId = "store-group")
     @Transactional
     public void onStockUpdated(String message) {
         try {
