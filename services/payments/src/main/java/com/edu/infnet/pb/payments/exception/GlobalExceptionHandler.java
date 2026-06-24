@@ -1,5 +1,6 @@
 package com.edu.infnet.pb.payments.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,11 +12,13 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, Object>> handleResponseStatus(ResponseStatusException ex) {
+        log.warn("Erro de negócio: status={}, motivo={}", ex.getStatusCode().value(), ex.getReason());
         return buildResponse(ex.getStatusCode().value(), ex.getReason());
     }
 
@@ -28,11 +31,13 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("Dados inválidos");
 
+        log.warn("Validação falhou: {}", message);
         return buildResponse(HttpStatus.BAD_REQUEST.value(), message);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+        log.error("Erro inesperado não tratado", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Erro interno inesperado");
     }
 

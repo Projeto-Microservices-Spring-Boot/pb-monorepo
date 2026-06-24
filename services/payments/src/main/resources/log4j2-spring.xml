@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
+        </Console>
+
+        <Http name="Elasticsearch" url="http://elasticsearch:9200/payments-logs/_doc">
+            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
+            <Property name="Content-Type" value="application/json"/>
+        </Http>
+    </Appenders>
+
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Elasticsearch"/>
+        </Root>
+        <Logger name="com.edu.infnet.pb" level="TRACE" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Elasticsearch"/>
+        </Logger>
+    </Loggers>
+</Configuration>

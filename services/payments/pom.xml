@@ -60,6 +60,11 @@
 		  <artifactId>opentelemetry-spring-boot-starter</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-layout-template-json</artifactId>
+		</dependency>
+
 		<!-- Database -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
