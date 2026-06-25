@@ -1,5 +1,6 @@
 package com.edu.infnet.pb.stickers.Controller;
 
+import com.edu.infnet.pb.stickers.Dto.Communication.CreateTradeDTO;
 import com.edu.infnet.pb.stickers.Dto.Communication.Trocas;
 import com.edu.infnet.pb.stickers.Dto.TradeProposalRequest;
 import com.edu.infnet.pb.stickers.Dto.TradeProposalResponse;
@@ -30,7 +31,7 @@ public class TradeProposalController {
         return UUID.fromString(auth.getSubject());
     }
     @GetMapping("/pontostroca")
-    public ResponseEntity<List<Trocas>> listarTrocas() {
+    public ResponseEntity<List<CreateTradeDTO>> listarTrocas() {
         return ResponseEntity.ok(proposalService.listarTrocas());
     }
 

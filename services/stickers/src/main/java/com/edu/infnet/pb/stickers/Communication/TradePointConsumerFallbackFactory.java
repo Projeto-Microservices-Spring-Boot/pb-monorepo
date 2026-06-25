@@ -1,6 +1,6 @@
 package com.edu.infnet.pb.stickers.Communication;
 
-import com.edu.infnet.pb.stickers.Dto.Communication.Trocas;
+import com.edu.infnet.pb.stickers.Dto.Communication.CreateTradeDTO;
 import com.edu.infnet.pb.stickers.Exception.BusinessRuleException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,7 +17,7 @@ public class TradePointConsumerFallbackFactory implements FallbackFactory<TradeP
     public TradePointConsumer create(Throwable cause) {
         return new TradePointConsumer() {
             @Override
-            public List<Trocas> getTrocas() {
+            public List<CreateTradeDTO> getTrocas() {
                 log.error("Erro ao buscar pontos de troca: {}", cause.getMessage());
                 // Mock de pontos de trocas
                 throw new BusinessRuleException(

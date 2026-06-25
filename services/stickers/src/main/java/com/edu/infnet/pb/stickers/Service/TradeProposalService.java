@@ -1,7 +1,7 @@
 package com.edu.infnet.pb.stickers.Service;
 
 import com.edu.infnet.pb.stickers.Communication.TradePointConsumer;
-import com.edu.infnet.pb.stickers.Dto.Communication.Trocas;
+import com.edu.infnet.pb.stickers.Dto.Communication.CreateTradeDTO;
 import com.edu.infnet.pb.stickers.Dto.TradeItemDTO;
 import com.edu.infnet.pb.stickers.Dto.TradeProposalRequest;
 import com.edu.infnet.pb.stickers.Entity.TradeItem;
@@ -35,7 +35,7 @@ public class TradeProposalService {
 
 
 
-    public List<Trocas> listarTrocas() {
+    public List<CreateTradeDTO> listarTrocas() {
         return tradePointConsumer.getTrocas();
     }
 
