@@ -16,7 +16,9 @@
 
         <!-- Envio para Logstash via TCP com JSON -->
         <Socket name="Logstash" host="logstash" port="5044" protocol="TCP"> <!--TCP para envios constantes, http um por vez -->
-            <JsonTemplateLayout eventTemplateUri="classpath:EcstLayout.json"/>
+            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json">
+                <EventTemplateAdditionalField key="service.name" value="stickers-service"/> <!-- Adiciona Nome do serviço -->
+            </JsonTemplateLayout>
             <!-- Pega Estrutura json do Arquivo EcsLayout que já vem no log4j-->
         </Socket>
 
