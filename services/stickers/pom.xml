@@ -71,6 +71,12 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
+        <!-- Feign -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
         <!-- Cloud / Resilience -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
