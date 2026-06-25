@@ -88,6 +88,12 @@
             <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
 
+        <!-- template EcsLayout.json embutido -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-layout-template-json</artifactId>
+        </dependency>
+
         <!-- Lombok & Tests -->
         <dependency>
             <groupId>org.projectlombok</groupId>
