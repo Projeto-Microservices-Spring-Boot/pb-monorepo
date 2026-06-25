@@ -160,7 +160,7 @@ services:
     ports:
       - "5045:5045"
     volumes:
-      - ./logstash/stickers-pipeline.conf:/usr/share/logstash/stickerslogstash.conf
+      - ./logstash/stickerlogstash.conf:/usr/share/logstash/pipeline/stickerlogstash.conf
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -381,6 +381,8 @@ services:
       kong: 
          condition: service_healthy
       kafka:
+        condition: service_healthy
+      logstash-stickers:
         condition: service_healthy
 
   store:
