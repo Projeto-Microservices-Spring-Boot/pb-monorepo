@@ -41,6 +41,9 @@ eureka:
       defaultZone: http://eureka:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+feign:
+  circuitbreaker:
+    enaabled: true # Não usa circuitbreaker mas precisa pro fallback pegar
 
 logging:
   level:
