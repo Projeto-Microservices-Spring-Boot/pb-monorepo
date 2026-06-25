@@ -1,7 +1,6 @@
 package com.edu.infnet.pb.stickers.Controller;
 
 import com.edu.infnet.pb.stickers.Dto.Communication.CreateTradeDTO;
-import com.edu.infnet.pb.stickers.Dto.Communication.Trocas;
 import com.edu.infnet.pb.stickers.Dto.TradeProposalRequest;
 import com.edu.infnet.pb.stickers.Dto.TradeProposalResponse;
 import com.edu.infnet.pb.stickers.Service.TradeProposalService;
