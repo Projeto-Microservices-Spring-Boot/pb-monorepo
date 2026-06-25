@@ -62,10 +62,7 @@ management:
           - health
           - prometheus
           - info
-  logging:
-    level:
-      root: ERROR # framework (Spring, Hibernate, Kafka) só mostra erros
-      com.edu.infnet.pb.stickers: INFO # meu código mostra INFO e ERROR
+
 
 otel:
   exporter:
