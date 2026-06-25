@@ -46,8 +46,7 @@ services:
       - name: geolocalization-routes
         paths:
            - /maps
-           - /figurinhas
-           - /api/maps
+           - /api
         strip_path: false
         protocols:
           - http

@@ -2,13 +2,12 @@ package com.edu.infnet.pb.geolocalization.controller;
 
 
 import com.edu.infnet.pb.geolocalization.dto.EditarEventosDTO;
-import com.edu.infnet.pb.geolocalization.dto.figurinhas.TradeMatchResponseDTO;
 import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CriacaoEventoDTO;
 import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CreateTradeDTO;
 import com.edu.infnet.pb.geolocalization.model.EventoCopa;
 import com.edu.infnet.pb.geolocalization.model.Favorito;
 import com.edu.infnet.pb.geolocalization.model.Eventos;
-import com.edu.infnet.pb.geolocalization.model.Trocas;
+import com.edu.infnet.pb.geolocalization.model.PontosTrocas;
 import com.edu.infnet.pb.geolocalization.services.EventoCopaService;
 import com.edu.infnet.pb.geolocalization.services.EventosServices;
 import com.edu.infnet.pb.geolocalization.services.TrocasServices;
@@ -36,8 +35,8 @@ public class LocalizacaoController {
     // Trocas
 
     @PostMapping("/troca/criar")
-    public ResponseEntity<Trocas> pontoTroca(@RequestBody CreateTradeDTO createTradeDTO) {
-        return trocasServices.criarTroca(createTradeDTO);
+    public ResponseEntity<PontosTrocas> pontoTroca(@RequestBody CreateTradeDTO createTradeDTO ,@RequestHeader("Authorization") String token) {
+        return trocasServices.criarTroca(createTradeDTO , token);
     }
 
     @PostMapping("/troca/favoritando")
@@ -46,27 +45,25 @@ public class LocalizacaoController {
     }
 
     @DeleteMapping("/troca/deletando")
-    public ResponseEntity<Trocas> deletandoTrocas(@RequestParam Long eventoId, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<PontosTrocas> deletandoTrocas(@RequestParam Long eventoId, @RequestHeader("Authorization") String token) {
         return trocasServices.deletandoTrocas(eventoId, token);
     }
 
     @PutMapping("/troca/editarTrocas")
-    public ResponseEntity<Trocas> editarTrocas(@RequestParam Long eventoId, @RequestBody EditarEventosDTO editarEventosDTO) {
+    public ResponseEntity<PontosTrocas> editarTrocas(@RequestParam Long eventoId, @RequestBody EditarEventosDTO editarEventosDTO) {
         return trocasServices.editarTroca(eventoId, editarEventosDTO);
     }
 
     @GetMapping("/trocas")
-    public ResponseEntity<List<Trocas>> listarTrocas() {
+    public ResponseEntity<List<PontosTrocas>> listarTrocas() {
         return ResponseEntity.ok(trocasServices.listarTrocas());
     }
 
 
-    @GetMapping("/trocas/{trocaId}/matches")
-    public ResponseEntity<List<TradeMatchResponseDTO>> buscarMatchesNaTroca(
-            @PathVariable Long trocaId) {
-        return ResponseEntity.ok(trocasServices.buscarMatchesNaTroca(trocaId));
+    @GetMapping("/trocas/buscar-por-id/{id}")
+    public ResponseEntity<PontosTrocas> findById(@PathVariable Long id) {
+        return trocasServices.findById(id);
     }
-
 
 // ====================================================================================================================================//
 
@@ -105,12 +102,6 @@ public class LocalizacaoController {
         return eventosServices.buscarEventosProximos(lat , lng , raioKm);
     }
 
-
-    @GetMapping("/eventos/{eventoId}/matches")
-    public ResponseEntity<List<TradeMatchResponseDTO>> buscarMatchesNoEvento(
-            @PathVariable Long eventoId) {
-        return ResponseEntity.ok(eventosServices.buscarMatchesNoEventos(eventoId));
-    }
 
 
 // ====================================================================================================================================//

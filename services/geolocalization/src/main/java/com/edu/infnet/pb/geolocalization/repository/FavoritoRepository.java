@@ -15,11 +15,4 @@ List<Favorito> findByUsuarioId(UUID usuarioId);
 void deleteByEventoId(Long eventoId);
 void deleteByTrocaId(Long id);
 
-
-    @Query("SELECT f.usuarioId FROM Favorito f WHERE f.evento.id = :eventoId")
-    List<UUID> buscarUsuarioIdsPorEvento(@Param("eventoId") Long eventoId);
-
-@Query("SELECT f.usuarioId FROM Favorito f WHERE f.troca.id = :trocaId")
-List<UUID> buscarUsuarioIdsPorTroca(@Param("trocaId") Long trocaId);
-
 }

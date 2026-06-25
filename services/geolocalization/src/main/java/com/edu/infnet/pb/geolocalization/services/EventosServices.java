@@ -4,7 +4,6 @@ package com.edu.infnet.pb.geolocalization.services;
 import com.edu.infnet.pb.geolocalization.client.UsuarioClient;
 import com.edu.infnet.pb.geolocalization.dto.EditarEventosDTO;
 import com.edu.infnet.pb.geolocalization.dto.PerfilResponseDTO;
-import com.edu.infnet.pb.geolocalization.dto.figurinhas.TradeMatchResponseDTO;
 import com.edu.infnet.pb.geolocalization.dto.trocaEventos.CriacaoEventoDTO;
 import com.edu.infnet.pb.geolocalization.dto.trocaEventos.PlacesResponseDTO;
 import com.edu.infnet.pb.geolocalization.model.Favorito;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -28,7 +26,6 @@ private ApiServices apiServices;
 private UsuarioClient usuarioClient;
 private FavoritoRepository favoritoRepository;
 private EventoRepository eventoRepository;
-private FigurinhaService figurinhaService;
 
     public ResponseEntity<Eventos> criarEvento(CriacaoEventoDTO criacaoEventoDTO) {
         Eventos eventos = new Eventos();
@@ -101,12 +98,6 @@ private FigurinhaService figurinhaService;
     public ResponseEntity<List<Eventos>> buscarEventosProximos(Double lat , Double lng , Double raioKm) {
         List<Eventos> eventos = eventoRepository.buscarEventosProximos(lat, lng, raioKm);
         return  ResponseEntity.ok(eventos);
-    }
-
-    public List<TradeMatchResponseDTO> buscarMatchesNoEventos(Long trocaId) {
-        List<TradeMatchResponseDTO> todosMatches = figurinhaService.buscarTodosOsMatches();
-        List<UUID> usuariosNaTroca = favoritoRepository.buscarUsuarioIdsPorEvento(trocaId);
-        return figurinhaService.filtrarMatchesPorUsuarios(todosMatches, usuariosNaTroca);
     }
 
     public List<Eventos> listarEventos() {

@@ -26,7 +26,7 @@ private Long id;
     private Eventos evento;
 
     @ManyToOne @JoinColumn(name = "troca_id", nullable = true)
-    private Trocas troca;
+    private PontosTrocas troca;
 
     @Column(nullable = false)
     private LocalDateTime dataFavoritado;

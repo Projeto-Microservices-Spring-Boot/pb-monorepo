@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,6 @@ public class ApiServices {
 
     private final ObjectMapper objectMapper;
     private Map<String , GeoLocalizacaoDosEtadiosDTO> estadios;
-
 
     // buscar a lat e long
     private final WebClient nominatim =
@@ -75,6 +75,7 @@ public class ApiServices {
                 .retrieve()
                 .bodyToMono(FootballResponseDTO.class)
                 .map(FootballResponseDTO::games)
+                .timeout(Duration.ofSeconds(5))
                 .block();
 
 
@@ -83,6 +84,7 @@ public class ApiServices {
                 .retrieve()
                 .bodyToMono(StadiumResponseDTO.class)
                 .map(StadiumResponseDTO::stadiums)
+                .timeout(Duration.ofSeconds(5))
                 .block();
 
         Map<String , String> estadioMap = estadios.stream()
@@ -106,8 +108,6 @@ public class ApiServices {
         log.error("Fallback acionado para buscarJogosCopas, erro={}", t.getMessage());
         return List.of();
     }
-
-
 
     // long e lati dos estadios
     @PostConstruct
@@ -133,6 +133,7 @@ public class ApiServices {
                     ));
         }
     }
+
     public GeoLocalizacaoDosEtadiosDTO buscarPorNome(String nome) {
         return estadios.get(nome.toLowerCase());
     }

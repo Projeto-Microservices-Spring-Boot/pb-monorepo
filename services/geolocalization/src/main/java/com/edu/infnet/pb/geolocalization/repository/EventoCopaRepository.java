@@ -8,7 +8,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EventoCopaRepository extends JpaRepository<EventoCopa, Long> {
 
-//    @Query("SELECT e FROM EventoCopa e WHERE e.id = :id AND e.tipo = :tipo")
-//    Optional<EventoCopa> findByIdAndTipo(@Param("id") Long id, @Param("tipo") PointType tipo);
-
 }
