@@ -153,6 +153,17 @@ services:
       timeout: 10s
       retries: 10
 
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.0
+    container_name: pb_logstash
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstash/pipeline.conf:/usr/share/logstash/pipeline/logstash.conf
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
   swagger-ui:
     image: swaggerapi/swagger-ui:v5.18.3
     container_name: pb_swagger-ui

@@ -5,7 +5,7 @@
             <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
         </Console>
 
-        <Http name="Elasticsearch" url="http://elasticsearch:9200/payments-logs/_doc">
+        <Http name="Logstash" url="http://logstash:5044">
             <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
             <Property name="Content-Type" value="application/json"/>
         </Http>
@@ -14,11 +14,11 @@
     <Loggers>
         <Root level="INFO">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="Elasticsearch"/>
+            <AppenderRef ref="Logstash"/>
         </Root>
         <Logger name="com.edu.infnet.pb" level="TRACE" additivity="false">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="Elasticsearch"/>
+            <AppenderRef ref="Logstash"/>
         </Logger>
     </Loggers>
 </Configuration>
