@@ -160,7 +160,7 @@ services:
     ports:
       - "5045:5045"
     volumes:
-      - ./logstash/stickers-pipeline.conf:/usr/share/logstash/logstash.conf
+      - ./logstash/stickers-pipeline.conf:/usr/share/logstash/stickerslogstash.conf
     depends_on:
       elasticsearch:
         condition: service_healthy
