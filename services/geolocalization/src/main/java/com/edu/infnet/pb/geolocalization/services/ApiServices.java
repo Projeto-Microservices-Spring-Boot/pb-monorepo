@@ -44,6 +44,9 @@ public class ApiServices {
 
     @CircuitBreaker(name = "placesApi", fallbackMethod = "fallbackMap")
     public Mono<List<PlacesResponseDTO>> buscarLocais(String endereco) {
+
+        log.info("Buscando as localizacoes para endereco={}", endereco);
+
         return nominatim.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/search")
@@ -53,11 +56,15 @@ public class ApiServices {
                 .retrieve()
                 .bodyToFlux(PlacesResponseDTO.class)
                 .collectList();
+
     }
 
 
+
+
     public Mono<List<PlacesResponseDTO>> fallbackMap(String endereco , Throwable t) {
-        System.out.println("Fallback acionado para: "+ endereco);
+        log.warn(
+                "Nenhuma localizacao encontrada endereco={} erro={}", endereco , t.getMessage());
         return Mono.just(List.of());
     }
 
@@ -68,7 +75,7 @@ public class ApiServices {
 
     @CircuitBreaker(name = "footballApi", fallbackMethod = "fallbackBuscarJogosCopas")
     public List<MatchDTO> buscarJogosCopas() {
-
+        log.info("Iniciando consulta dos jogos da copa");
 
         List<MatchDTO>  jogos = football.get()
                 .uri("/get/games")
@@ -112,11 +119,12 @@ public class ApiServices {
     // long e lati dos estadios
     @PostConstruct
     void carregarEstadios() throws IOException {
-
+        log.info("carregando estadios!");
         try (InputStream is = getClass().getResourceAsStream("/localizacaoEstadio.json")) {
 
 
             if (is == null) {
+                log.error("Arquivo localizacaoEstadio.json nao encontrado");
                 throw new RuntimeException(
                         "Arquivo localizacaoEstadio.json nao encontrado"
                 );
@@ -125,16 +133,19 @@ public class ApiServices {
 
             estadios = Arrays.stream(
                             objectMapper.readValue(is , GeoLocalizacaoDosEtadiosDTO[].class)
-
                     )
                     .collect(Collectors.toMap(
                             estadios -> estadios.nome().toLowerCase(),
                             Function.identity()
                     ));
+
+            log.info("Estadios carregados quantidade={}" , estadios.size());
         }
     }
 
     public GeoLocalizacaoDosEtadiosDTO buscarPorNome(String nome) {
+
+        log.info("buscando estadios por nome = {}" , nome);
         return estadios.get(nome.toLowerCase());
     }
 

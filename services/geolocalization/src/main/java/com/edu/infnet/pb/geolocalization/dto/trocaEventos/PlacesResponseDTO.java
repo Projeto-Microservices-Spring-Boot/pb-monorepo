@@ -6,4 +6,4 @@ public record PlacesResponseDTO(
         String display_name ,
         String lat,
         String lon
-) { }
+) {}

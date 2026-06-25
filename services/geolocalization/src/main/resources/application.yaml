@@ -34,6 +34,7 @@ eureka:
 
 logging:
   level:
+    root : INFO
     "[com.edu.infnet.pb]": TRACE
   pattern:
     correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "

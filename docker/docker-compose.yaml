@@ -5,6 +5,9 @@ volumes:
   redis_data:
   kafka_data:
   grafana_data:
+  elasticsearch_data:
+
+
 
 services:
   # ---------------------------------------------------------------------------
@@ -156,6 +159,50 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
 
   # ---------------------------------------------------------------------------
+  # ELK Stack - Elasticsearch + Logstash + Kibana
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: pb_elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.4
+    container_name: pb_logstash
+    ports:
+      - "5000:5000"
+      - "9600:9600"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: pb_kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+
+  # ---------------------------------------------------------------------------
   # Jaeger Tracing
   # ---------------------------------------------------------------------------
 
@@ -177,18 +224,18 @@ services:
     image: swaggerapi/swagger-ui:v5.18.3
     container_name: pb_swagger-ui
     ports:
-      - "8089:8080" 
+      - "8089:8080"
     environment:
       URLS: >-
-            [
-              {"url":"http://localhost:8000/docs/users/v3/api-docs","name":"Users"},
-              {"url":"http://localhost:8000/docs/adm-dashboard/v3/api-docs","name":"Adm Dashboard"},
-              {"url":"http://localhost:8000/docs/community/v3/api-docs","name":"Community"},
-              {"url":"http://localhost:8000/docs/geolocalization/v3/api-docs","name":"Geolocalization"},
-              {"url":"http://localhost:8000/docs/payments/v3/api-docs","name":"Payments"},
-              {"url":"http://localhost:8000/docs/stickers/v3/api-docs","name":"Stickers"},
-              {"url":"http://localhost:8000/docs/store/v3/api-docs","name":"Store"}
-            ]
+        [
+          {"url":"http://localhost:8000/docs/users/v3/api-docs","name":"Users"},
+          {"url":"http://localhost:8000/docs/adm-dashboard/v3/api-docs","name":"Adm Dashboard"},
+          {"url":"http://localhost:8000/docs/community/v3/api-docs","name":"Community"},
+          {"url":"http://localhost:8000/docs/geolocalization/v3/api-docs","name":"Geolocalization"},
+          {"url":"http://localhost:8000/docs/payments/v3/api-docs","name":"Payments"},
+          {"url":"http://localhost:8000/docs/stickers/v3/api-docs","name":"Stickers"},
+          {"url":"http://localhost:8000/docs/store/v3/api-docs","name":"Store"}
+        ]
       QUERY_CONFIG_ENABLED: "true"
       PERSIST_AUTHORIZATION: "true"
       DISPLAY_REQUEST_DURATION: "true"
@@ -233,8 +280,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-      kong: 
-         condition: service_healthy  
+      kong:
+        condition: service_healthy
 
   users:
     container_name: users-service
@@ -251,8 +298,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-      kong: 
-         condition: service_healthy  
+      kong:
+        condition: service_healthy
 
   community:
     container_name: community-server
@@ -269,8 +316,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-      kong: 
-         condition: service_healthy  
+      kong:
+        condition: service_healthy
 
   geolocalization:
     container_name: geolocalization-service
@@ -287,8 +334,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-      kong: 
-         condition: service_healthy  
+      kong:
+        condition: service_healthy
 
   payments:
     container_name: payments-service
@@ -305,8 +352,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-      kong: 
-         condition: service_healthy
+      kong:
+        condition: service_healthy
       kafka:
         condition: service_healthy
 
@@ -325,8 +372,8 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-      kong: 
-         condition: service_healthy  
+      kong:
+        condition: service_healthy
 
   store:
     container_name: store-service
@@ -343,5 +390,5 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-      kong: 
-         condition: service_healthy  
+      kong:
+        condition: service_healthy
