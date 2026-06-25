@@ -21,12 +21,14 @@ public class TradeProposalResponse {
     private LocalDateTime resolvedAt;
     private List<TradeItemResponse> itensOrigem;
     private List<TradeItemResponse> itensDestino;
+    private Long pontoTrocaId;
 
     public static TradeProposalResponse fromEntity(TradeProposal proposal) {
         return TradeProposalResponse.builder()
                 .id(proposal.getId())
                 .usuarioOrigem(proposal.getUsuarioOrigem())
                 .usuarioDestino(proposal.getUsuarioDestino())
+                .pontoTrocaId(proposal.getPontoTrocaId())
                 .status(proposal.getStatus())
                 .createdAt(proposal.getCreatedAt())
                 .resolvedAt(proposal.getResolvedAt())

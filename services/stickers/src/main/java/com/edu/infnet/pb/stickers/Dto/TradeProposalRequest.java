@@ -20,4 +20,6 @@ public class TradeProposalRequest {
 
 
     private List<TradeItemDTO> itensDestino;  // o que quem propõe quer receber
+
+    private Long pontoTrocaId;
 }

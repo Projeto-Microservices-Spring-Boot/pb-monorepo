@@ -1,5 +1,6 @@
 package com.edu.infnet.pb.stickers.Controller;
 
+import com.edu.infnet.pb.stickers.Dto.Communication.Trocas;
 import com.edu.infnet.pb.stickers.Dto.TradeProposalRequest;
 import com.edu.infnet.pb.stickers.Dto.TradeProposalResponse;
 import com.edu.infnet.pb.stickers.Service.TradeProposalService;
@@ -27,6 +28,10 @@ public class TradeProposalController {
 
     private UUID currentUserId(Jwt auth) {
         return UUID.fromString(auth.getSubject());
+    }
+    @GetMapping("/pontostroca")
+    public ResponseEntity<List<Trocas>> listarTrocas() {
+        return ResponseEntity.ok(proposalService.listarTrocas());
     }
 
     /**

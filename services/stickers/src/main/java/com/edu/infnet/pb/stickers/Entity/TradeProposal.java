@@ -28,6 +28,9 @@ public class TradeProposal {
     @Column(name = "usuario_destino", nullable = false)
     private UUID usuarioDestino;
 
+    @Column(name = "ponto_troca_id", nullable = false)
+    private Long pontoTrocaId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private TradeStatus status;

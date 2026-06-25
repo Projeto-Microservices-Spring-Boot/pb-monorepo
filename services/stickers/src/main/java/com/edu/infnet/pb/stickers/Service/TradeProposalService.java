@@ -1,5 +1,7 @@
 package com.edu.infnet.pb.stickers.Service;
 
+import com.edu.infnet.pb.stickers.Communication.TradePointConsumer;
+import com.edu.infnet.pb.stickers.Dto.Communication.Trocas;
 import com.edu.infnet.pb.stickers.Dto.TradeItemDTO;
 import com.edu.infnet.pb.stickers.Dto.TradeProposalRequest;
 import com.edu.infnet.pb.stickers.Entity.TradeItem;
@@ -29,6 +31,13 @@ public class TradeProposalService {
     private final StickerService stickerService;
     private final StickerCollectionService collectionService;
     private final CollectionTransferService transferService;
+    private final TradePointConsumer tradePointConsumer;
+
+
+
+    public List<Trocas> listarTrocas() {
+        return tradePointConsumer.getTrocas();
+    }
 
     /**
      * Cria uma proposta de troca.
@@ -52,6 +61,7 @@ public class TradeProposalService {
         TradeProposal proposal = TradeProposal.builder()
                 .usuarioOrigem(usuarioOrigem)
                 .usuarioDestino(request.getUsuarioDestino())
+                .pontoTrocaId(request.getPontoTrocaId())
                 .status(TradeStatus.PENDENTE)
                 .build();
 
