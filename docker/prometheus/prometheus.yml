@@ -1,0 +1,66 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: kong-metrics
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["kong:8001"]
+        labels:
+          gateway: "Kong"
+
+  - job_name: eureka-server-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["eureka-server:8761"]
+        labels:
+          application: "Discovery Server"
+
+  - job_name: adm-dashboard-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["adm-dashboard:8081"]
+        labels:
+          application: "Adm Dashboard Service"
+
+  - job_name: users-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["users:8082"]
+        labels:
+          application: "Users Service"
+
+  - job_name: community-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["community:8083"]
+        labels:
+          application: "Community Service"
+
+  - job_name: geolocalization-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["geolocalization:8084"]
+        labels:
+          application: "Geolocalization Services"
+
+  - job_name: payments-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["payments:8085"]
+        labels:
+          application: "Payments Service"
+
+  - job_name: stickers-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["stickers:8087"]
+        labels:
+          application: "Stickers Service"
+
+  - job_name: store-metrics
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["store:8088"]
+        labels:
+          application: "Store Service"

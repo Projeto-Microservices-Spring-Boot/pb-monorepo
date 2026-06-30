@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Feed
+url: "{{communityurl}}/posts?page=0&size=20"
+method: GET
+order: 3000

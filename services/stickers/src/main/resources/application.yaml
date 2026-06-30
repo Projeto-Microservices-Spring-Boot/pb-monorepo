@@ -1,0 +1,93 @@
+spring:
+  application:
+    name: stickers
+
+  datasource:
+    url: jdbc:postgresql://pg:5432/stickers
+    username: admin
+    password: admin
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true # Spring espera o Hibernate criar/atualizar os schemas
+    show-sql: true
+
+  sql:
+    init:
+     mode: always
+     data-locations: classpath:database-sticker.seed/*.sql
+
+
+
+
+
+server:
+  port: 8087
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+  client:
+    service-url:
+      defaultZone: http://eureka:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+feign:
+  circuitbreaker:
+    enaabled: true # Não usa circuitbreaker mas precisa pro fallback pegar
+
+logging:
+  level:
+    "[com.edu.infnet.pb]": TRACE
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+
+
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # 100% dos tracings gerados será exportado
+
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - prometheus
+          - info
+
+
+otel:
+  exporter:
+    otlp:
+      endpoint: "http://jaeger:4318"
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      collection:
+        sliding-window-size: 10               # analisa as últimas 10 requisições
+        failure-rate-threshold: 50            # se 50% falharem, abre o circuito
+        wait-duration-in-open-state: 30s      # fica aberto 30s antes de tentar de novo      # fica aberto 30s antes de tentar de novo
+        permitted-number-of-calls-in-half-open-state: 3 # testa com 3 requisições antes de fechar
+      sticker:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3

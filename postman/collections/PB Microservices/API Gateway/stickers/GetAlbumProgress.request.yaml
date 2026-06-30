@@ -1,0 +1,9 @@
+$kind: http-request
+name: GetAlbumProgress
+url: "{{gatewayurl}}/collections/progress"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 3200

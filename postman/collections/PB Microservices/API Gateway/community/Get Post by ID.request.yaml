@@ -1,0 +1,12 @@
+$kind: http-request
+name: Get Post by ID
+url: "{{gatewayurl}}/posts/{{postId}}?page=0&size=50"
+method: GET
+queryParams:
+  page: "0"
+  size: "50"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJmcm9udGVuZCIsIm5hbWUiOiJTZWxsZXIgS29uZyIsInN1YiI6IjRlODM3YmViLWRkMDktNDhjMC04Y2IyLWI1MzNlOGJjMzA4ZSIsInJvbGUiOiJTRUxMRVIiLCJleHAiOjE3ODE5OTcxNDUsImlhdCI6MTc4MTk5Njg0NX0.DI8Kr6aFpH7CJqtKCinh2Z8abrr2US10S0bD5j1qDWMm9hxIxhOL2hDrAyGenoo5ZlJaasmR8c-Z8loA7BxoFqfm8M7Gsob94ZLgFH6WTKLQCUvkqOugA4jgfnbK2IWJE8nisnpJNrceni0dEjxz3Grl7nW2FVwFRym83Ibm1hPPQ9duns8sNtrXO-_CWtiwErcqfg6AeDM85oz-zQ6zdzn19wbiVSIQI87J6jlRhKK70gFj-e7s3RSAnsNyqmkYEme3N0pYzb4LQhIQ6a62tSyC_TuRL43IZ36CqK7QN5_8i1-aEfO2X0Vj-vLB3kdXKY97mZVQKZiBrLx8FV1Vfw
+order: 4000

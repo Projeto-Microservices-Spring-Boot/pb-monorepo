@@ -1,0 +1,9 @@
+$kind: http-request
+name: Delete Post
+url: "{{gatewayurl}}/posts/{{postId}}"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 6000

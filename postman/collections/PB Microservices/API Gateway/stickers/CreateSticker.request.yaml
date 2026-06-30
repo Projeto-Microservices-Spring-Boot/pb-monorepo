@@ -1,0 +1,12 @@
+$kind: http-request
+name: CreateSticker
+url: "{{gatewayurl}}/stickers"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+body:
+  type: json
+  content: "{\r\n\r\n    \"stickerCode\": \"BRA-01\",\r\n\r\n    \"name\": \"Neymar Jr\",\r\n\r\n    \"team\": \"Brasil\",\r\n\r\n    \"type\": \"PLAYER_STICKER\"\r\n\r\n}"
+order: 2000

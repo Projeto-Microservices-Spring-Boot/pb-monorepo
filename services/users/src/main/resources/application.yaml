@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: users
+
+  datasource:
+    url: jdbc:postgresql://pg:5432/users
+    username: admin
+    password: admin
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    defer-datasource-initialization: true # Spring espera o Hibernate criar/atualizar os schemas
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+  sql: # roda scripts SQL ao inicializa o app
+    init:
+      mode: always # sempre ira rodar os scripts SQL ao iniciar o app
+      data-locations: classpath:database/seed/*.sql # local dos scripts SQL de seed
+
+
+server:
+  port: 8082
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+  client:
+    service-url:
+      defaultZone: http://eureka:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+logging:
+  level:
+    "[com.edu.infnet.pb]": TRACE
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # 100% dos tracings gerados será exportado
+
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - prometheus
+          - info
+
+otel:
+  exporter:
+    otlp:
+      endpoint: "http://jaeger:4318"
+  traces:
+    exporter: otlp
+  metrics:
+    exporter: none
+  logs:
+    exporter: none

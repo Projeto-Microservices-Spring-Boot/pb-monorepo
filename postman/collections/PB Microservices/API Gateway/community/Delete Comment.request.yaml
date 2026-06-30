@@ -1,0 +1,9 @@
+$kind: http-request
+name: Delete Comment
+url: "{{gatewayurl}}/comments/{{commentId}}"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+order: 8000

@@ -1,0 +1,18 @@
+$kind: http-request
+name: Update Post
+url: "{{gatewayurl}}/posts/{{postId}}"
+method: PUT
+auth:
+  type: bearer
+  credentials:
+    token: "{{authtoken}}"
+body:
+  type: json
+  content: "{\r
+
+    \    \"title\": \"Post Atualizado\",\r
+
+    \    \"content\": \"Conteúdo editado com sucesso.\"\r
+
+    }"
+order: 5000

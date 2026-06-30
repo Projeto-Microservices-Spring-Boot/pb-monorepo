@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+
+        <!-- Console normal -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ISO8601} [%t] %-5level %logger{36} - %msg%n"/> <!-- Estrutura do log-->
+            <!--%d{ISO8601}: Data/hora no formato (ISO2026-06-24T10:35:22,123)-->
+            <!--%-5level: Nível do log, alinhado em 5 chars (INFO , ERROR, WARN) -->
+            <!-- [%t]: Nome da thread ( [http-nio-8080-exec-1] ) -->
+            <!--%logger{36}: Nome da classe limitado a 36 charsc.e.i.p.stickers.service.StickerService -->
+            <!-- %msgA: mensagem do logSticker not found for id 42 -->
+            <!-- %nQuebra:  de linha -->
+
+        </Console>
+
+        <!-- Envio para Logstash via TCP com JSON -->
+        <Socket name="Logstash" host="logstash-stickers" port="5045" protocol="TCP"
+                reconnectionDelayMillis="4000" immediateFlush="true" ignoreExceptions="true"><!--TCP para envios constantes, http um por vez -->
+            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json">
+                <EventTemplateAdditionalField key="service.name" value="stickers-service"/> <!-- Adiciona Nome do serviço -->
+            </JsonTemplateLayout>
+            <!-- Pega Estrutura json do Arquivo EcsLayout que já vem no log4j-->
+        </Socket>
+
+    </Appenders>
+
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="Logstash"/>
+        </Root>
+    </Loggers>
+</Configuration>
