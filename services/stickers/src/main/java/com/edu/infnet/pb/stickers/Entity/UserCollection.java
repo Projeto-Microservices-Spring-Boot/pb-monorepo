@@ -34,6 +34,10 @@ public class UserCollection {
     @Column(name = "added_at", nullable = false, updatable = false)
     private LocalDateTime addedAt;
 
+    public boolean hasRepeated() {
+        return quantity > 1;
+    }
+
     public int getRepeatedCount() {
         return Math.max(0, quantity - 1);
     }

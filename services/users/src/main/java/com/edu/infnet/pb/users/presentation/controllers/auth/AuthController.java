@@ -25,27 +25,18 @@ import lombok.RequiredArgsConstructor;
 public class AuthController implements AuthControllerDocs {
   private final AuthService service;
 
-  @Override
   @PostMapping("/register")
   public ResponseEntity<RegisterResponseDto> register(@RequestBody RegisterRequestDto body) {
     var result = service.register(body);
     return ResponseEntity.ok(result);
   }
 
-  @PostMapping("/register/seller")
-  public ResponseEntity<RegisterResponseDto> registerSeller(@RequestBody RegisterRequestDto body) {
-    var result = service.registerSeller(body);
-    return ResponseEntity.ok(result);
-  }
-
-  @Override
   @PostMapping("/login")
   public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto body) {
     var result = service.login(body);
     return ResponseEntity.ok(result);
   }
 
-  @Override
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(@AuthenticationPrincipal Jwt jwt) {
     UUID userId = UUID.fromString(jwt.getSubject());

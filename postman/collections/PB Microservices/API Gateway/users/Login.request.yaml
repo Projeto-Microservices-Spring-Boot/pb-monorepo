@@ -4,19 +4,7 @@ url: "{{gatewayurl}}/auth/login"
 method: POST
 body:
   type: json
-  content: "{\r
-
-    \r
-
-    \    \"email\":\"NatanRObers@email.com\",\r
-
-    \r
-
-    \    \"password\":\"123456678\"\r
-
-    \r
-
-    }"
+  content: "{\r\n\r\n    \"email\":\"kong@email.com\",\r\n\r\n    \"password\":\"123456678\"\r\n\r\n}"
 scripts:
   - type: afterResponse
     code: |-

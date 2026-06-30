@@ -6,6 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TradeItemDTO {
-    private Long stickerId;
-    private Integer quantity;
+    Long stickerId;
+    Integer quantity;
 }

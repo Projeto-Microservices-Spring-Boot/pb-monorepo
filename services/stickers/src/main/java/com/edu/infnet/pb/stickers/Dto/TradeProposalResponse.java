@@ -14,31 +14,45 @@ import java.util.UUID;
 public class TradeProposalResponse {
 
     private Long id;
-    private UUID usuarioOrigem;
-    private UUID usuarioDestino;
+    private UUID proposerId;
+    private UUID receiverId;
     private TradeStatus status;
+    private String message;
+    private String meetingLocation;
+    private LocalDateTime meetingAt;
+    private boolean confirmedByProposer;
+    private boolean confirmedByReceiver;
+    private LocalDateTime proposerConfirmedAt;
+    private LocalDateTime receiverConfirmedAt;
+    private LocalDateTime completedAt;
     private LocalDateTime createdAt;
-    private LocalDateTime resolvedAt;
-    private List<TradeItemResponse> itensOrigem;
-    private List<TradeItemResponse> itensDestino;
-    private Long pontoTrocaId;
+    private LocalDateTime updatedAt;
+    private LocalDateTime expiresAt;
+    private List<TradeStickerResponse> offeredStickers;
+    private List<TradeStickerResponse> requestedStickers;
 
-    public static TradeProposalResponse fromEntity(TradeProposal proposal) {
+    public static TradeProposalResponse fromEntity(TradeProposal trade) {
         return TradeProposalResponse.builder()
-                .id(proposal.getId())
-                .usuarioOrigem(proposal.getUsuarioOrigem())
-                .usuarioDestino(proposal.getUsuarioDestino())
-                .pontoTrocaId(proposal.getPontoTrocaId())
-                .status(proposal.getStatus())
-                .createdAt(proposal.getCreatedAt())
-                .resolvedAt(proposal.getResolvedAt())
-                .itensOrigem(proposal.getItems().stream()
-                        .filter(i -> i.getSide().name().equals("ORIGEM"))
-                        .map(TradeItemResponse::fromEntity)
+                .id(trade.getId())
+                .proposerId(trade.getProposerId())
+                .receiverId(trade.getReceiverId())
+                .status(trade.getStatus())
+                .message(trade.getMessage())
+                .meetingLocation(trade.getMeetingLocation())
+                .meetingAt(trade.getMeetingAt())
+                .confirmedByProposer(trade.isConfirmedByProposer())
+                .confirmedByReceiver(trade.isConfirmedByReceiver())
+                .proposerConfirmedAt(trade.getProposerConfirmedAt())
+                .receiverConfirmedAt(trade.getReceiverConfirmedAt())
+                .completedAt(trade.getCompletedAt())
+                .createdAt(trade.getCreatedAt())
+                .updatedAt(trade.getUpdatedAt())
+                .expiresAt(trade.getExpiresAt())
+                .offeredStickers(trade.getOfferedStickers().stream()
+                        .map(item -> TradeStickerResponse.fromEntity(item.getSticker(), item.getQuantity()))
                         .toList())
-                .itensDestino(proposal.getItems().stream()
-                        .filter(i -> i.getSide().name().equals("DESTINO"))
-                        .map(TradeItemResponse::fromEntity)
+                .requestedStickers(trade.getRequestedStickers().stream()
+                        .map(item -> TradeStickerResponse.fromEntity(item.getSticker(), item.getQuantity()))
                         .toList())
                 .build();
     }

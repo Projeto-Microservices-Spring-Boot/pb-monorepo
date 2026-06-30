@@ -38,10 +38,4 @@ variables:
   - key: userid
     value: ""
     type: string
-  - key: postId
-    value: ""
-    type: string
-  - key: commentId
-    value: ""
-    type: string
 

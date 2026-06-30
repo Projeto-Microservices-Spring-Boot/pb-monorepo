@@ -27,9 +27,6 @@ public class Payment {
     @Column(nullable = false)
     private UUID userId;
 
-    @Column(unique = true)
-    private UUID orderId;
-
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 

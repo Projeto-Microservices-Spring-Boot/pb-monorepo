@@ -11,15 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import com.edu.infnet.pb.payments.dto.OrderPaymentRequestedEvent;
-import com.edu.infnet.pb.payments.enums.PaymentMethod;
-import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -28,25 +24,10 @@ public class PaymentService {
     private final PaymentProducer producer;
 
     public PaymentResponse create(PaymentRequest request, UUID userId) {
-        var processed = persistAndProcess(userId, request.amount(), request.method(), null);
-        return toResponse(processed);
-    }
-
-    public void createFromOrder(OrderPaymentRequestedEvent event) {
-        if (repository.existsByOrderId(event.orderId())) {
-            log.warn("Pagamento já processado para orderId {}, ignorando mensagem duplicada", event.orderId());
-            return;
-        }
-
-        persistAndProcess(event.userId(), event.amount(), PaymentMethod.PIX, event.orderId());
-    }
-
-    private Payment persistAndProcess(UUID userId, BigDecimal amount, PaymentMethod method, UUID orderId) {
         var payment = Payment.builder()
                 .userId(userId)
-                .orderId(orderId)
-                .amount(amount)
-                .method(method)
+                .amount(request.amount())
+                .method(request.method())
                 .status(PaymentStatus.PENDING)
                 .build();
 
@@ -56,7 +37,7 @@ public class PaymentService {
         var processed = process(saved);
         producer.publish(toEvent(processed));
 
-        return processed;
+        return toResponse(processed);
     }
 
     public PaymentResponse findById(UUID id, UUID userId) {

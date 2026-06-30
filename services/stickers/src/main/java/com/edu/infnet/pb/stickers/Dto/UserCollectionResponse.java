@@ -17,8 +17,6 @@ public class UserCollectionResponse {
     private int repeatedCount;
     private LocalDateTime addedAt;
 
-
-    //Converte a entity UseCollection em dto
     public static UserCollectionResponse fromEntity(UserCollection collection) {
         return UserCollectionResponse.builder()
                 .userId(collection.getId().getUserId())

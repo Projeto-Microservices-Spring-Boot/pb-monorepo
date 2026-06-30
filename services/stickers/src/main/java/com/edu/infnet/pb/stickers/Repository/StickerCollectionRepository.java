@@ -35,14 +35,4 @@ public interface StickerCollectionRepository extends JpaRepository<UserCollectio
     @Query("SELECT COUNT(uc) FROM UserCollection uc WHERE uc.id.userId = :userId")
     long countByUserId(@Param("userId") UUID userId);
 
-    /**
-     * Lista TODAS as linhas de UserCollection do sistema (todos os usuários,
-     * todas as stickers que cada um possui, com quantidade e nome). Usado
-     * pelo TradeMatchService para calcular, em memória, todos os pares de
-     * usuários que podem trocar entre si — sem partir de um usuário fixo.
-     * Resultado: Object[]{ userId (UUID), stickerId (Long), quantity (Integer), playerName (String) }
-     */
-    @Query("SELECT uc.id.userId, uc.id.stickerId, uc.quantity, uc.sticker.name FROM UserCollection uc")
-    List<Object[]> findAllCollectionsForMatching();
 }
-

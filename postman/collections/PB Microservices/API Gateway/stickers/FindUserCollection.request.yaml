@@ -1,6 +1,6 @@
 $kind: http-request
 name: FindUserCollection
-url: "{{gatewayurl}}/collections/album"
+url: "{{gatewayurl}}/stickers/collections/{{userid}}"
 method: GET
 auth:
   type: bearer

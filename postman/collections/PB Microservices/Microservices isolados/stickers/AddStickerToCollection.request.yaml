@@ -1,6 +1,6 @@
 $kind: http-request
 name: AddStickerToCollection
-url: "{{stickersurl}}/collections/album"
+url: "{{stickersurl}}/collections/{{userid}}/stickers"
 method: POST
 auth:
   type: bearer

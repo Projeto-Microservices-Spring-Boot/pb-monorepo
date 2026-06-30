@@ -29,19 +29,10 @@ services:
     routes:
       - name: community
         paths:
-          - /comments
-          - /posts
-        strip_path: false
+          - /community
+        strip_path: true
         protocols:
           - http
-          - https
-        plugins:
-          - name: jwt
-            config:
-              header_names:
-                - authorization
-              claims_to_verify: [exp]
-              key_claim_name: iss
 
       - name: community-docs
         paths: ["/docs/community"]
@@ -55,8 +46,7 @@ services:
       - name: geolocalization-routes
         paths:
            - /maps
-           - /figurinhas
-           - /api/maps
+           - /api
         strip_path: false
         protocols:
           - http
@@ -104,7 +94,6 @@ services:
       - name: users.public
         paths:
           - /auth/register
-          - /auth/register/seller
           - /auth/login
         strip_path: false
         protocols:
@@ -158,21 +147,8 @@ services:
       - name: stickers
         paths:
           - /stickers
-        strip_path: false
-        protocols:
-          - http
-          - https
-        plugins:
-          - name: jwt
-            config:
-              header_names:
-                - authorization # Lê o token do header Authorization
-              claims_to_verify: [ exp ] # Verifica se o token não está expirado
-              key_claim_name: iss # Usa o campo "iss" do token para identificar o consumer
-
-      - name: collections
-        paths:
           - /collections
+          - /trades
         strip_path: false
         protocols:
           - http
@@ -184,18 +160,10 @@ services:
                 - authorization # Lê o token do header Authorization
               claims_to_verify: [exp] # Verifica se o token não está expirado
               key_claim_name: iss # Usa o campo "iss" do token para identificar o consumer
-          - name: rate-limiting
-            config:
-              second: 2 # ⏱️ Máx. 2 requests por segundo
-              minute: 30 # Máx. 30 por minuto
-              hour: 150 # 🕐 Máx. 150 por hora
-              policy: local # Contadores em memória local de cada nó
-              limit_by: consumer # Limita por cada consumer individual
-            enabled: true
 
       - name: stickers-docs
         paths: ["/docs/stickers"]
-        strip_path: false
+        strip_path: true
         protocols:
           - http
 
@@ -262,7 +230,6 @@ plugins:
   - name: cors
     config:
       origins:
-        - "http://localhost:8089"
         - "http://localhost:3000" # frontend (dev)
       credentials: true # Necessário para header Authorization funcionar no browser
       max_age: 3600 # Cache do preflight por 1 hora

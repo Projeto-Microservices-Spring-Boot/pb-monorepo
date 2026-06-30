@@ -1,6 +1,6 @@
 $kind: http-request
 name: FindMissingStickers
-url: "{{stickersurl}}/collections/missing"
+url: "{{stickersurl}}/collections/{{userid}}/missing"
 method: GET
 auth:
   type: bearer

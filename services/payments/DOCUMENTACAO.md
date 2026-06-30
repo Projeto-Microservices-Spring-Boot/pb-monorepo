@@ -1,7 +1,7 @@
 # Documentação Técnica — Microsserviço `payments`
 
 > Documento de referência para estudo, manutenção e onboarding.
-> Baseado no código efetivamente implementado em junho de 2026 — inclui processamento de pagamento (simulação determinística), publicação de eventos no Kafka (Producer) e recebimento de pedidos de pagamento via Kafka (Consumer).
+> Baseado no código efetivamente implementado em junho de 2026 — inclui processamento de pagamento (simulação determinística) e integração com Kafka.
 
 ---
 
@@ -31,17 +31,13 @@ O microsserviço `payments` é responsável por **criar, consultar, listar e can
 
 ### Problema que resolve
 
-Em uma arquitetura de microsserviços, nenhum serviço deve ser responsável por tudo. O `payments` isola completamente o domínio financeiro: outros serviços (como `store`) não precisam saber como um pagamento é criado ou cancelado — apenas consomem eventos de confirmação, ou publicam pedidos de pagamento para o `payments` consumir. Isso evita acoplamento e permite que o `payments` evolua de forma independente.
+Em uma arquitetura de microsserviços, nenhum serviço deve ser responsável por tudo. O `payments` isola completamente o domínio financeiro: outros serviços (como `store`) não precisam saber como um pagamento é criado ou cancelado — apenas consomem eventos futuros de confirmação. Isso evita acoplamento e permite que o `payments` evolua de forma independente.
 
 ### Papel dentro da arquitetura
 
-O `payments` é um **Resource Server OAuth2**: ele não emite tokens JWT, apenas os valida. Toda requisição HTTP que chega precisa de um token emitido pelo microsserviço `users`. O `payments` verifica a assinatura do token, extrai a identidade do usuário e usa essa identidade para todas as operações.
-
-O serviço tem **duas portas de entrada independentes** para o mesmo domínio de pagamento — uma síncrona (REST) e uma assíncrona (Kafka) — que compartilham a mesma lógica de negócio internamente:
+O `payments` é um **Resource Server OAuth2**: ele não emite tokens JWT, apenas os valida. Toda requisição que chega precisa de um token emitido pelo microsserviço `users`. O `payments` verifica a assinatura do token, extrai a identidade do usuário e usa essa identidade para todas as operações.
 
 ```
-Fluxo síncrono (REST):
-
 Frontend / Postman
       │
       ▼
@@ -52,20 +48,6 @@ payments (porta 8085)
       │  valida JWT → consulta PostgreSQL
       ▼
 Banco de dados payments (PostgreSQL)
-
-
-Fluxo assíncrono (Kafka):
-
-Store (ou qualquer produtor do tópico)
-      │  publica em order.payment.requested
-      ▼
-payments (porta 8085)
-      │  PaymentConsumer consome → PaymentService processa → PostgreSQL
-      ▼
-Banco de dados payments (PostgreSQL)
-      │  publica resultado em payment.initiated / approved / failed
-      ▼
-Kafka (outros serviços podem consumir)
 ```
 
 ### Relação com o microsserviço `users`
@@ -119,29 +101,26 @@ services/payments/
 │   │   │   ├── PaymentsApplication.java       ← ponto de entrada
 │   │   │   ├── config/
 │   │   │   │   ├── OpenAPIConfig.java         ← configuração do Swagger/OpenAPI
-│   │   │   │   └── KafkaConfig.java           ← declara os tópicos Kafka (NewTopic beans), de entrada e de saída
-│   │   │   ├── consumer/
-│   │   │   │   └── PaymentConsumer.java       ← recebe pedidos de pagamento via Kafka (entrada assíncrona)
+│   │   │   │   └── KafkaConfig.java           ← declara os tópicos Kafka (NewTopic beans)
 │   │   │   ├── controller/
-│   │   │   │   └── PaymentController.java     ← endpoints REST (entrada síncrona)
+│   │   │   │   └── PaymentController.java     ← endpoints REST
 │   │   │   ├── dto/
-│   │   │   │   ├── PaymentRequest.java            ← dados de entrada da API REST
-│   │   │   │   ├── PaymentResponse.java           ← dados de saída da API REST
-│   │   │   │   ├── PaymentEvent.java              ← payload publicado no Kafka (saída)
-│   │   │   │   └── OrderPaymentRequestedEvent.java ← payload recebido do Kafka (entrada)
+│   │   │   │   ├── PaymentRequest.java        ← dados de entrada da API
+│   │   │   │   ├── PaymentResponse.java       ← dados de saída da API
+│   │   │   │   └── PaymentEvent.java          ← payload publicado no Kafka
 │   │   │   ├── entity/
 │   │   │   │   └── Payment.java               ← entidade JPA (tabela payments)
 │   │   │   ├── enums/
 │   │   │   │   ├── PaymentMethod.java         ← métodos de pagamento disponíveis
 │   │   │   │   └── PaymentStatus.java         ← estados possíveis de um pagamento
 │   │   │   ├── exception/
-│   │   │   │   └── GlobalExceptionHandler.java ← tratamento centralizado de erros (fluxo REST)
+│   │   │   │   └── GlobalExceptionHandler.java ← tratamento centralizado de erros
 │   │   │   ├── producer/
 │   │   │   │   └── PaymentProducer.java       ← publica eventos no Kafka
 │   │   │   ├── repository/
 │   │   │   │   └── PaymentRepository.java     ← acesso ao banco de dados
 │   │   │   └── service/
-│   │   │       └── PaymentService.java        ← regras de negócio + processamento + disparo de eventos (compartilhado entre REST e Kafka)
+│   │   │       └── PaymentService.java        ← regras de negócio + processamento + disparo de eventos
 │   │   └── resources/
 │   │       └── application.yaml              ← configurações da aplicação
 │   └── test/
@@ -159,15 +138,13 @@ services/payments/
 | Camada | Pacote | Responsabilidade |
 |---|---|---|
 | **Controller** | `controller/` | Receber requisições HTTP, extrair dados do JWT, delegar ao service, retornar resposta |
-| **Consumer** | `consumer/` | Receber mensagens Kafka, delegar ao service — equivalente ao Controller, mas para a entrada assíncrona |
-| **Service** | `service/` | Implementar regras de negócio, validar ownership, lançar exceções de negócio — compartilhado pelas duas entradas (REST e Kafka) |
+| **Service** | `service/` | Implementar regras de negócio, validar ownership, lançar exceções de negócio |
 | **Repository** | `repository/` | Executar queries no banco de dados via Spring Data JPA |
 | **Entity** | `entity/` | Representar a tabela `payments` no banco — nunca exposta diretamente na API |
-| **DTO** | `dto/` | Contratos de entrada (Request, evento Kafka recebido) e saída (Response, evento Kafka publicado) |
+| **DTO** | `dto/` | Contratos de entrada (Request) e saída (Response) da API |
 | **Enums** | `enums/` | Valores válidos para status e método de pagamento |
-| **Config** | `config/` | Configuração do Swagger/OpenAPI e dos tópicos Kafka (segurança vem do `shared`) |
-| **Exception** | `exception/` | Interceptar e formatar erros de forma padronizada (fluxo REST) |
-| **Producer** | `producer/` | Publicar eventos de resultado no Kafka |
+| **Config** | `config/` | Configuração do Swagger/OpenAPI (segurança vem do `shared`) |
+| **Exception** | `exception/` | Interceptar e formatar erros de forma padronizada |
 
 ### Fluxo completo de uma requisição
 
@@ -372,54 +349,25 @@ Cliente recebe resposta JSON
 
 **Nota sobre serialização:** o `JsonSerializer` do Kafka serializa `LocalDateTime` como array (`[2026,6,16,23,30,26,267482000]`), não como string ISO-8601. Funcional, mas não é o formato mais amigável para consumidores — ajuste pendente antes de outros serviços passarem a consumir estes tópicos.
 
-**Nota sobre correlação:** este DTO não inclui `orderId`. Eventos publicados a partir de pagamentos criados via Kafka (ver `OrderPaymentRequestedEvent` abaixo) não carregam, no evento de saída, o pedido de origem da Store — a correlação só existe internamente, no banco de dados (`Payment.orderId`). Quem consumir `payment.initiated`/`approved`/`failed` só identifica o pagamento pelo `paymentId`.
-
----
-
-### `dto/OrderPaymentRequestedEvent.java`
-
-**Localização:** `com/edu/infnet/pb/payments/dto/OrderPaymentRequestedEvent.java`
-
-**Responsabilidade:** Representar o payload recebido do tópico Kafka `order.payment.requested` — o contrato de entrada do pedido de pagamento publicado por outro serviço (a Store).
-
-**Por que existe:** É o contrato assíncrono de entrada, simétrico ao `PaymentRequest` (contrato síncrono de entrada via REST), mas propositalmente um tipo diferente: a origem dos dados é outro serviço publicando no Kafka, não um cliente HTTP autenticado, então os campos disponíveis e as garantias são diferentes (não há JWT nem `@Valid` automático nesse caminho).
-
-**Quem utiliza:** `PaymentConsumer` (recebe a mensagem já desserializada pelo Spring Kafka), `PaymentService.createFromOrder()` (recebe como parâmetro).
-
-**Campos:**
-
-| Campo | Tipo | Validação declarada | Descrição |
-|---|---|---|---|
-| `orderId` | `UUID` | `@NotNull` | Identificador do pedido na Store — usado para correlação e idempotência |
-| `userId` | `UUID` | `@NotNull` | Dono do pagamento — substitui o papel que o JWT tem no fluxo REST |
-| `amount` | `BigDecimal` | `@NotNull`, `@DecimalMin("0.01")` | Valor já calculado pela Store |
-
-**Por que não tem `method`:** decisão de escopo — a Store, no momento desta implementação, não publica o método de pagamento escolhido pelo cliente. O `PaymentService` aplica `PIX` como método fixo para todo pagamento criado por este caminho (ver `PaymentService.createFromOrder()`, Seção 4).
-
-**Importante — validação não é automática:** as anotações `@NotNull`/`@DecimalMin` existem no record, mas, diferente do `PaymentRequest`, nada no fluxo do Consumer dispara essa validação automaticamente (não há `@Valid` em um `@KafkaListener`). Um campo nulo só é percebido quando vira erro de constraint no banco ou de regra de negócio dentro do `PaymentService`.
-
 ---
 
 ### `config/KafkaConfig.java`
 
 **Localização:** `com/edu/infnet/pb/payments/config/KafkaConfig.java`
 
-**Responsabilidade:** Declarar os tópicos Kafka usados pelo `payments` como beans `NewTopic` — tanto os de saída (eventos publicados) quanto o de entrada (pedidos recebidos).
+**Responsabilidade:** Declarar os tópicos Kafka usados pelo `payments` como beans `NewTopic`.
 
-**Por que existe:** O Kafka do ambiente roda com `KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"` (configurado no `docker-compose.yaml`). Sem essa classe, qualquer tentativa de publicar ou consumir em um tópico inexistente falha. O Spring Kafka detecta automaticamente beans `NewTopic` no contexto e cria os tópicos correspondentes no broker durante o startup.
+**Por que existe:** O Kafka do ambiente roda com `KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"` (configurado no `docker-compose.yaml`). Sem essa classe, qualquer tentativa de publicar em um tópico inexistente falha. O Spring Kafka detecta automaticamente beans `NewTopic` no contexto e cria os tópicos correspondentes no broker durante o startup.
 
 **Tópicos declarados:**
 
-| Tópico | Partições | Replicação | Direção | Quando é usado |
-|---|---|---|---|---|
-| `payment.initiated` | 1 | 1 | Saída | Publicado logo após a criação do pagamento (status `PENDING`) |
-| `payment.approved` | 1 | 1 | Saída | Publicado quando o processamento aprova o pagamento |
-| `payment.failed` | 1 | 1 | Saída | Publicado quando o processamento reprova o pagamento |
-| `order.payment.requested` | 1 | 1 | Entrada | Consumido pelo `PaymentConsumer` — pedido de pagamento publicado por outro serviço (a Store) |
+| Tópico | Partições | Replicação | Quando é usado |
+|---|---|---|---|
+| `payment.initiated` | 1 | 1 | Publicado logo após a criação do pagamento (status `PENDING`) |
+| `payment.approved` | 1 | 1 | Publicado quando o processamento aprova o pagamento |
+| `payment.failed` | 1 | 1 | Publicado quando o processamento reprova o pagamento |
 
 **Quem utiliza:** Nenhum código chama esta classe diretamente — o Spring Kafka a descobre via `@Configuration` e processa os beans `NewTopic` automaticamente no startup.
-
-**Nota sobre propriedade do tópico de entrada:** o `payments` é quem declara (e portanto cria) o tópico `order.payment.requested`, mesmo sendo o consumidor e não o produtor dele. Isso é uma decisão temporária — no momento desta implementação, o microsserviço Store ainda não existe para criar esse tópico do lado dele. Quando a Store for implementada, vale reavaliar se a criação deveria migrar para lá.
 
 ---
 
@@ -445,25 +393,7 @@ CANCELLED (ou qualquer outro) → nenhum tópico, apenas log de aviso
 
 **Chave da mensagem:** o `paymentId` (como String). Isso garante que todos os eventos de um mesmo pagamento caiam na mesma partição, preservando a ordem entre eles.
 
-**Tratamento de erro:** desde a Etapa 3 do `IMPLEMENTACAO.md`, `publish()` aguarda a confirmação do Kafka de forma síncrona (`.get(2, TimeUnit.SECONDS)`) e está anotado com `@Retry(name = "kafka-publisher", fallbackMethod = "publishFallback")` (Resilience4j) — até 3 tentativas, com 500ms de espera entre elas (configurado em `application.yaml`). Se todas as tentativas falharem, `publishFallback()` apenas loga o erro definitivo, sem propagar exceção — uma falha de publicação no Kafka **não impede** a resposta HTTP ao cliente nem reverte a criação do pagamento.
-
----
-
-### `consumer/PaymentConsumer.java`
-
-**Localização:** `com/edu/infnet/pb/payments/consumer/PaymentConsumer.java`
-
-**Responsabilidade:** Ponto de entrada do fluxo assíncrono de pagamentos — consome mensagens do tópico `order.payment.requested` e delega ao `PaymentService`. É o equivalente Kafka do `PaymentController`.
-
-**Por que existe:** Mantém a tradução "transporte → domínio" isolada da regra de negócio, da mesma forma que o `PaymentController` faz para o REST. Não contém nenhuma lógica de negócio — só recebe a mensagem, loga e delega.
-
-**Quem utiliza:** Nenhum código chama esta classe diretamente — o Spring Kafka a invoca automaticamente quando uma mensagem chega no tópico configurado, via `@KafkaListener`.
-
-**Depende de:** `PaymentService`, `OrderPaymentRequestedEvent`.
-
-**Como participa do fluxo:** É o primeiro ponto de código Java que uma mensagem Kafka atinge. Diferente do `PaymentController`, não há JWT nem `userId` extraído de uma sessão autenticada — o `userId` já vem dentro do próprio payload da mensagem (`event.userId()`).
-
-**Tratamento de erro:** o método `consume()` envolve a chamada a `service.createFromOrder()` em um `try/catch`. Qualquer exceção lançada pelo `PaymentService` (por exemplo, violação de constraint no banco por um campo ausente na mensagem) é capturada, logada em nível `ERROR` com o `orderId` da mensagem, e a mensagem é descartada — o offset Kafka avança normalmente, sem reprocessamento. Esse tratamento é deliberadamente simples (sem fila de mensagens mortas, sem retry customizado), adequado ao escopo do projeto. Falhas de **desserialização** (mensagem com JSON inválido) acontecem antes do método `consume()` ser chamado, então não passam por esse `try/catch` — são tratadas pelo comportamento padrão do Spring Kafka, que nesta configuração falha uma única vez e avança o offset sozinho, sem travar o consumer.
+**Tratamento de erro:** `kafkaTemplate.send()` é assíncrono e retorna um `CompletableFuture`. O producer usa `.whenComplete()` para logar sucesso ou falha sem bloquear o fluxo principal — uma falha de publicação no Kafka **não impede** a resposta HTTP ao cliente nem derruba o serviço.
 
 ---
 
@@ -480,8 +410,6 @@ CANCELLED (ou qualquer outro) → nenhum tópico, apenas log de aviso
 **Depende de:** `PaymentMethod`, `PaymentStatus`.
 
 **Como participa do fluxo:** O service constrói instâncias desta classe usando o padrão Builder (`Payment.builder()...build()`) e as passa para o repository. Nunca sai do service sem ser convertida para `PaymentResponse`.
-
-**Campo `orderId` (UUID, nullable, `@Column(unique = true)`):** adicionado para suportar o fluxo Kafka. Pagamentos criados via REST mantêm `orderId = null` — no Postgres, uma constraint `UNIQUE` trata múltiplos valores `NULL` como distintos entre si, então isso não gera conflito entre pagamentos REST. Pagamentos criados via Kafka sempre têm `orderId` preenchido com o identificador do pedido de origem na Store: é o que permite correlacionar o pagamento ao pedido, e é a base da idempotência (ver `PaymentService.createFromOrder()`, Seção 4) — a constraint única no banco é a garantia final contra duplicidade, mesmo que a checagem prévia em memória falhe por concorrência.
 
 ---
 
@@ -572,10 +500,7 @@ CANCELLED (ou qualquer outro) → nenhum tópico, apenas log de aviso
 | `save(Payment)` | Herdado de `JpaRepository` | `INSERT` ou `UPDATE` |
 | `findById(UUID)` | Herdado de `JpaRepository` | `SELECT ... WHERE id = ?` |
 | `findByUserId(UUID)` | Declarado na interface | `SELECT ... WHERE user_id = ?` |
-| `existsByOrderId(UUID)` | Declarado na interface | `SELECT EXISTS(SELECT 1 ... WHERE order_id = ?)` |
 | `findAll()` | Herdado de `JpaRepository` | `SELECT * FROM payments` |
-
-**`existsByOrderId(UUID orderId)`:** usado pelo `PaymentService.createFromOrder()` para checar, antes de criar um novo pagamento, se aquele `orderId` já foi processado — base da idempotência do fluxo Kafka.
 
 ---
 
@@ -583,15 +508,13 @@ CANCELLED (ou qualquer outro) → nenhum tópico, apenas log de aviso
 
 **Localização:** `com/edu/infnet/pb/payments/service/PaymentService.java`
 
-**Responsabilidade:** Implementar todas as regras de negócio do domínio de pagamentos — incluindo a simulação de processamento e o disparo de eventos Kafka. É a camada central da aplicação, e é compartilhada pelas duas portas de entrada (REST e Kafka).
+**Responsabilidade:** Implementar todas as regras de negócio do domínio de pagamentos — incluindo a simulação de processamento e o disparo de eventos Kafka. É a camada central da aplicação.
 
-**Por que existe:** Separa a lógica de negócio do protocolo de entrada (HTTP ou Kafka), do acesso a dados (repository) e da mensageria de saída (producer). Se amanhã a API mudar de REST para gRPC, ou surgir uma terceira porta de entrada, o núcleo de regra de negócio não muda.
+**Por que existe:** Separa a lógica de negócio do protocolo HTTP (controller), do acesso a dados (repository) e da mensageria (producer). Se amanhã a API mudar de REST para gRPC, ou o Kafka for trocado por outro broker, o service não muda.
 
-**Quem utiliza:** `PaymentController` (fluxo REST) e `PaymentConsumer` (fluxo Kafka) — são os dois únicos componentes que devem chamar o service diretamente.
+**Quem utiliza:** `PaymentController` — é o único componente que deve chamar o service diretamente.
 
-**Depende de:** `PaymentRepository`, `PaymentProducer`, `Payment`, `PaymentRequest`, `PaymentResponse`, `PaymentEvent`, `PaymentStatus`, `PaymentMethod`, `OrderPaymentRequestedEvent`.
-
-**Estrutura interna (desde a Etapa 4 do `IMPLEMENTACAO.md`):** o método público `create()` (REST) e o método público `createFromOrder()` (Kafka) são dois adaptadores finos que convergem para um único método privado, `persistAndProcess()`, que concentra a sequência real de criação/processamento de um pagamento. Isso evita duplicar a regra de negócio entre as duas entradas (ver Seção 4 para o detalhamento de cada método).
+**Depende de:** `PaymentRepository`, `PaymentProducer`, `Payment`, `PaymentRequest`, `PaymentResponse`, `PaymentEvent`, `PaymentStatus`.
 
 ---
 
@@ -624,18 +547,6 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        max.block.ms: 2000    # evita que send() trave por até 60s (default) quando o Kafka está inacessível
-    consumer:
-      group-id: payments-service        # identifica o grupo de consumidores no Kafka
-      auto-offset-reset: earliest       # não perde mensagens publicadas antes do consumer subir, em um grupo novo
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      properties:
-        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: com.edu.infnet.pb.payments.dto
-        spring.json.value.default.type: com.edu.infnet.pb.payments.dto.OrderPaymentRequestedEvent
-        spring.json.use.type.headers: false   # a Store é outro codebase, nunca envia o header de tipo do Spring
 
 server:
   port: 8085                 # porta do serviço
@@ -683,16 +594,9 @@ otel:
     exporter: none
   logs:
     exporter: none
-
-resilience4j:
-  retry:
-    instances:
-      kafka-publisher:          # usado pela anotação @Retry em PaymentProducer.publish()
-        max-attempts: 3
-        wait-duration: 500ms
 ```
 
-> As propriedades `jwt.public.key` e `jwt.private.key` são declaradas explicitamente aqui — o `SecurityConfig` do módulo `shared` não tem mais valor default. A propriedade `spring.kafka.bootstrap-servers` aponta para `kafka:29092`, o nome DNS do broker na rede interna do Docker Compose. O bloco `spring.kafka.consumer` configura o lado de entrada (usado pelo `PaymentConsumer`) e é independente do bloco `producer` — alterar um não afeta o outro.
+> As propriedades `jwt.public.key` e `jwt.private.key` são declaradas explicitamente aqui — o `SecurityConfig` do módulo `shared` não tem mais valor default. A propriedade `spring.kafka.bootstrap-servers` aponta para `kafka:29092`, o nome DNS do broker na rede interna do Docker Compose.
 
 ---
 
@@ -711,10 +615,8 @@ resilience4j:
 | `postgresql` | Driver JDBC para PostgreSQL |
 | `shared` (módulo local) | Fornece `SecurityConfig`, `app.key.pub`, `spring-boot-starter-security` e `spring-boot-starter-oauth2-resource-server` |
 | `spring-cloud-starter-netflix-eureka-client` | Registro do serviço no Eureka |
-| `spring-kafka` | Publicação (`PaymentProducer`/`KafkaTemplate`) **e** consumo (`PaymentConsumer`/`@KafkaListener`) de eventos — a mesma dependência cobre as duas direções |
+| `spring-kafka` | Publicação de eventos de pagamento via `PaymentProducer` e `KafkaTemplate` (ver `config/KafkaConfig.java`, `producer/PaymentProducer.java`) |
 | `spring-cloud-starter-circuitbreaker-resilience4j` | Circuit Breaker, não configurado ainda |
-| `resilience4j-spring-boot3` | Retry com fallback na publicação Kafka (`@Retry` em `PaymentProducer.publish()`) |
-| `spring-boot-starter-aop` | Exigido pelo Resilience4j — intercepta o método anotado com `@Retry` via proxy AOP |
 | `micrometer-registry-prometheus` | Expõe métricas no formato Prometheus |
 | `opentelemetry-spring-boot-starter` | Rastreamento distribuído enviado ao Jaeger |
 | `lombok` | Geração de código boilerplate (`@Builder`, `@Getter`, etc.) |
@@ -729,17 +631,24 @@ resilience4j:
 
 ### `PaymentService.create(PaymentRequest request, UUID userId)`
 
-**Objetivo:** Criar um novo pagamento a partir de uma requisição REST, processá-lo (simulação de gateway) e publicar os eventos correspondentes no Kafka.
+**Objetivo:** Criar um novo pagamento, processá-lo (simulação de gateway) e publicar os eventos correspondentes no Kafka.
 
 **Parâmetros:**
 - `request` — body da requisição com `amount` e `method`, já validados pelo `@Valid` no controller
 - `userId` — UUID do usuário autenticado, extraído do JWT pelo controller
 
-**Fluxo interno (desde a Etapa 4 do `IMPLEMENTACAO.md`):** o método não contém mais a lógica diretamente — ele extrai os dados do `request` e delega ao método privado compartilhado `persistAndProcess(userId, request.amount(), request.method(), orderId = null)`, depois converte o resultado para `PaymentResponse` via `toResponse()`. O comportamento observável é idêntico ao de antes da refatoração — só a organização interna do código mudou.
+**Fluxo interno:**
+1. Constrói uma entidade `Payment` via Builder com os dados do request + userId + status `PENDING`
+2. Persiste no banco via `repository.save()` — esta é a primeira gravação, com status `PENDING`
+3. Publica no Kafka o evento referente a esse estado `PENDING` (tópico `payment.initiated`) via `producer.publish(toEvent(saved))`
+4. Chama `process(saved)`, que decide o status final (`APPROVED` ou `FAILED`) e salva novamente no banco
+5. Publica no Kafka o evento referente ao estado final (tópico `payment.approved` ou `payment.failed`)
+6. Converte a entidade processada para `PaymentResponse` via `toResponse()`
+7. Retorna o DTO já com o status final
 
 **Retorno:** `PaymentResponse` com todos os campos preenchidos, incluindo o UUID gerado e o status final (`APPROVED` ou `FAILED` — nunca `PENDING`, pois o processamento acontece de forma síncrona dentro da mesma chamada).
 
-**Exceções:** Nenhuma lançada diretamente. Erros de banco (ex: violação de constraint) seriam capturados pelo `GlobalExceptionHandler` como 500. Falhas ao publicar no Kafka são tratadas dentro de `PaymentProducer` (retry + fallback, ver Seção 3) e não interrompem o fluxo nem alteram a resposta HTTP.
+**Exceções:** Nenhuma lançada diretamente. Erros de banco (ex: violação de constraint) seriam capturados pelo `GlobalExceptionHandler` como 500. Falhas ao publicar no Kafka são tratadas dentro de `PaymentProducer` (log de erro) e não interrompem o fluxo nem alteram a resposta HTTP.
 
 **Exemplo prático:**
 ```
@@ -748,52 +657,6 @@ Saída:   { id: "uuid-xyz", userId: "uuid-abc", amount: 150.00,
            method: "PIX", status: "APPROVED",
            createdAt: "2026-06-09T21:00:00", updatedAt: "2026-06-09T21:00:00" }
 ```
-
----
-
-### `PaymentService.createFromOrder(OrderPaymentRequestedEvent event)`
-
-**Objetivo:** Criar um novo pagamento a partir de um pedido recebido via Kafka (publicado pela Store), reaproveitando a mesma lógica de processamento usada pelo REST.
-
-**Parâmetros:**
-- `event` — payload já desserializado pelo `PaymentConsumer`, contendo `orderId`, `userId` e `amount`
-
-**Fluxo interno:**
-1. Verifica idempotência: `repository.existsByOrderId(event.orderId())` — se já existir um pagamento com esse `orderId`, loga um aviso (`"Pagamento já processado para orderId..."`) e retorna sem fazer nada
-2. Caso contrário, delega para `persistAndProcess(event.userId(), event.amount(), PaymentMethod.PIX, event.orderId())` — mesma sequência usada pelo REST, com `method` fixo em `PIX` e `orderId` preenchido
-
-**Retorno:** `void` — diferente de `create()`, este método não precisa devolver um DTO de resposta, porque não há cliente HTTP esperando uma resposta síncrona; o resultado fica disponível via consulta posterior (`GET /payments/{id}` ou `/payments/my`) e via os eventos publicados no Kafka.
-
-**Exceções:** não lança exceções customizadas — qualquer falha (ex: violação de constraint no banco) propaga como exceção genérica, que é capturada pelo `try/catch` do `PaymentConsumer` (ver Seção 3).
-
-**Exemplo prático:**
-```
-Entrada: { orderId: "uuid-pedido", userId: "uuid-abc", amount: 777.77 }
-Efeito:  pagamento persistido com orderId = "uuid-pedido", method = "PIX",
-         status = "APPROVED"; eventos publicados em payment.initiated e payment.approved
-
-Reenvio do mesmo orderId → método retorna imediatamente, nenhum pagamento novo é criado
-```
-
----
-
-### `PaymentService.persistAndProcess(UUID userId, BigDecimal amount, PaymentMethod method, UUID orderId)` (privado)
-
-**Objetivo:** Núcleo compartilhado de criação e processamento de pagamento — contém a sequência que antes vivia inteiramente dentro de `create()`, agora reaproveitada pelas duas portas de entrada (REST e Kafka).
-
-**Por que existe:** Evita duplicar a regra de negócio "criar como PENDING → publicar → processar → publicar status final" em dois lugares diferentes. `create()` e `createFromOrder()` são adaptadores finos que só traduzem a origem dos dados (`PaymentRequest`+JWT vs. `OrderPaymentRequestedEvent`) antes de chamar este método.
-
-**Fluxo interno:**
-1. Constrói uma entidade `Payment` via Builder com `userId`, `orderId`, `amount`, `method` e status `PENDING`
-2. Persiste no banco via `repository.save()` — primeira gravação, com status `PENDING`
-3. Publica no Kafka o evento referente a esse estado `PENDING` (tópico `payment.initiated`) via `producer.publish(toEvent(saved))`
-4. Chama `process(saved)`, que decide o status final (`APPROVED` ou `FAILED`) e salva novamente no banco
-5. Publica no Kafka o evento referente ao estado final (tópico `payment.approved` ou `payment.failed`)
-6. Retorna a entidade `Payment` já processada
-
-**Retorno:** `Payment` (entidade, não DTO) — quem chama decide se converte para `PaymentResponse` (`create()`) ou se não precisa de DTO nenhum (`createFromOrder()`).
-
-**Utilizado por:** `create()` (com `orderId = null`) e `createFromOrder()` (com `orderId` preenchido e `method = PIX`).
 
 ---
 
@@ -811,7 +674,7 @@ Reenvio do mesmo orderId → método retorna imediatamente, nenhum pagamento nov
 
 **Retorno:** `Payment` com o status final já persistido.
 
-**Utilizado por:** `persistAndProcess`, logo após a primeira gravação como `PENDING` — portanto reaproveitado tanto pelo fluxo REST quanto pelo fluxo Kafka.
+**Utilizado por:** `create`, logo após a primeira gravação como `PENDING`.
 
 ---
 
@@ -821,7 +684,7 @@ Reenvio do mesmo orderId → método retorna imediatamente, nenhum pagamento nov
 
 **Por que existe:** Mantém o formato do evento Kafka desacoplado do formato do `PaymentResponse` (DTO de resposta HTTP). Embora hoje os dois tenham campos parecidos, representam contratos diferentes — um é consumido por outros serviços via Kafka, o outro é consumido pelo cliente HTTP.
 
-**Utilizado por:** `persistAndProcess`, duas vezes — uma vez para o estado `PENDING` e outra vez para o estado final (`APPROVED`/`FAILED`). Como `persistAndProcess` é compartilhado, pagamentos originados tanto do REST quanto do Kafka passam por aqui.
+**Utilizado por:** `create`, duas vezes — uma vez para o estado `PENDING` e outra vez para o estado final (`APPROVED`/`FAILED`).
 
 ---
 
@@ -920,27 +783,7 @@ Cancela pagamento de outro usuário  → 403 Forbidden
 
 **Por que existe:** Centraliza a conversão em um único lugar. Se o `PaymentResponse` mudar (ex: adicionar um campo), a alteração é feita apenas aqui.
 
-**Utilizado por:** `create`, `findById`, `findByUser`, `cancel` — todos os métodos públicos do service que respondem a uma requisição HTTP. `createFromOrder` **não** utiliza este método, porque não há cliente HTTP esperando um `PaymentResponse` no fluxo Kafka.
-
----
-
-### `PaymentConsumer.consume(OrderPaymentRequestedEvent event)`
-
-**Objetivo:** Receber uma mensagem do tópico `order.payment.requested` e delegar ao `PaymentService`, sem nenhuma lógica de negócio própria.
-
-**Parâmetros:**
-- `event` — payload já desserializado pelo Spring Kafka (via `JsonDeserializer`, configurado em `application.yaml`)
-
-**Fluxo interno:**
-1. Loga o recebimento da mensagem (`orderId` do evento)
-2. Chama `service.createFromOrder(event)` dentro de um `try/catch`
-3. Se ocorrer qualquer exceção, captura, loga em nível `ERROR` com o `orderId` e a mensagem do erro, e não propaga — o método retorna normalmente
-
-**Retorno:** `void`.
-
-**Por que o `try/catch` importa:** sem ele, uma exceção lançada por `service.createFromOrder()` propagaria para o container do Spring Kafka, que aplicaria seu comportamento padrão de tratamento de erro. Com o `try/catch`, o comportamento é explícito e controlado pelo próprio código da aplicação: loga e descarta a mensagem, sem reprocessamento.
-
-**Quando é chamado:** automaticamente pelo Spring Kafka, toda vez que uma nova mensagem chega no tópico `order.payment.requested` e o consumer (`group-id: payments-service`) está ativo.
+**Utilizado por:** `create`, `findById`, `findByUser`, `cancel` — todos os métodos públicos do service chamam este método antes de retornar.
 
 ---
 
@@ -1043,8 +886,6 @@ UUID userId = UUID.fromString(jwt.getSubject());
 ---
 
 ## 6. Endpoints
-
-> Esta seção cobre apenas a porta de entrada REST. A entrada via Kafka (`order.payment.requested`, consumida pelo `PaymentConsumer`) não é um endpoint HTTP — seu contrato está documentado em `dto/OrderPaymentRequestedEvent.java` (Seção 3) e seu comportamento nos Fluxos 7, 8 e 9 (Seção 9).
 
 ### `POST /payments` — Criar pagamento
 
@@ -1213,16 +1054,11 @@ A classe `Payment` é mapeada para a tabela `payments` no banco `payments` do Po
 |---|---|---|---|
 | `id` | `UUID` | PK, NOT NULL | Gerado automaticamente pelo Hibernate |
 | `user_id` | `UUID` | NOT NULL | UUID do usuário dono do pagamento |
-| `order_id` | `UUID` | UNIQUE, nullable | Identificador do pedido na Store — preenchido apenas em pagamentos criados via Kafka; `NULL` em pagamentos criados via REST |
 | `amount` | `NUMERIC(19,2)` | NOT NULL | Valor com precisão para dinheiro |
 | `method` | `VARCHAR(255)` | NOT NULL | Nome do enum: `PIX`, `CREDIT_CARD`, `BOLETO` |
 | `status` | `VARCHAR(255)` | NOT NULL | Nome do enum: `PENDING`, `APPROVED`, etc. |
 | `created_at` | `TIMESTAMP` | NOT NULL | Preenchido automaticamente na criação |
 | `updated_at` | `TIMESTAMP` | NOT NULL | Atualizado automaticamente a cada save |
-
-### Por que `order_id` é nullable e único ao mesmo tempo
-
-À primeira vista parece contraditório, mas é o comportamento padrão de uma constraint `UNIQUE` no Postgres: múltiplos valores `NULL` são considerados **distintos** entre si (não violam a unicidade). Isso permite que todos os pagamentos criados via REST tenham `order_id = NULL` sem nunca colidir entre si, enquanto qualquer tentativa de inserir um segundo pagamento com o **mesmo** `order_id` não nulo (ou seja, a mesma mensagem Kafka reprocessada) é rejeitada pelo banco — essa constraint é a defesa final de idempotência do fluxo Kafka, complementar à checagem `existsByOrderId()` feita em `PaymentService.createFromOrder()`.
 
 ### Por que `NUMERIC(19,2)` para amount
 
@@ -1266,21 +1102,12 @@ password: admin
 - O processamento ocorre de forma síncrona, dentro da mesma chamada a `create()` — não existe fila, delay ou callback assíncrono
 - Cada mudança de status gera um evento publicado no Kafka (ver "Eventos Kafka" abaixo e Seção 3, `producer/PaymentProducer.java`)
 
-### Eventos Kafka (saída)
+### Eventos Kafka
 
 - Toda criação de pagamento publica dois eventos: um para o estado `PENDING` (tópico `payment.initiated`) e outro para o estado final (`payment.approved` ou `payment.failed`)
 - A chave de cada mensagem é o `paymentId` (como String), garantindo que eventos do mesmo pagamento fiquem na mesma partição
-- A publicação aguarda confirmação do broker e tem retry com fallback (Resilience4j, até 3 tentativas) — uma falha definitiva é apenas logada, não bloqueia nem altera a resposta HTTP (ver `PaymentProducer.publish()`)
+- A publicação é assíncrona e não bloqueia nem altera a resposta HTTP — falhas de publicação são apenas logadas (ver `PaymentProducer.publish()`)
 - Os tópicos são criados explicitamente via `KafkaConfig` (`KAFKA_AUTO_CREATE_TOPICS_ENABLE` está desabilitado no cluster)
-- Vale para pagamentos criados por **qualquer** uma das duas portas de entrada (REST ou Kafka) — a publicação acontece dentro de `PaymentService.persistAndProcess()`, compartilhado pelas duas
-
-### Recebimento de pagamento via Kafka (entrada)
-
-- O `payments` consome o tópico `order.payment.requested`, publicado por outro serviço (a Store) com os dados mínimos de um pedido: `orderId`, `userId`, `amount`
-- O `method` não vem na mensagem — todo pagamento criado por este caminho recebe `method = PIX` fixo
-- Antes de processar, o `PaymentService.createFromOrder()` verifica se já existe um pagamento com aquele `orderId` (`repository.existsByOrderId()`); se existir, a mensagem é descartada sem criar um novo pagamento — mecanismo de idempotência, necessário porque o Kafka pode entregar a mesma mensagem mais de uma vez
-- A partir daí, o pagamento segue exatamente a mesma regra de processamento do fluxo REST (`amount < 1000.00` → `APPROVED`; `amount >= 1000.00` → `FAILED`) e publica os mesmos eventos de saída
-- Mensagens com erro (campo ausente, JSON malformado) não derrubam o consumer nem ficam travando o processamento de mensagens seguintes — são logadas e descartadas, sem fila de reprocessamento (DLQ) nem retry customizado, por decisão de escopo do projeto
 
 ### Consulta de pagamento
 
@@ -1523,117 +1350,21 @@ Cliente recebe: 401 Unauthorized
 
 ---
 
-### Fluxo 7 — Criação de pagamento via Kafka (caminho feliz)
-
-```
-Store (ou publicação manual de teste)
-  Publica em order.payment.requested:
-  { "orderId": "uuid-pedido", "userId": "uuid-abc", "amount": 500.00 }
-  │
-  ▼
-PaymentConsumer.consume()
-  Loga o recebimento: orderId = "uuid-pedido"
-  service.createFromOrder(event)
-  │
-  ▼
-PaymentService.createFromOrder()
-  repository.existsByOrderId("uuid-pedido") → false (primeira vez)
-  persistAndProcess(userId = "uuid-abc", amount = 500.00,
-                     method = PIX, orderId = "uuid-pedido")
-  │
-  ▼
-PaymentService.persistAndProcess()
-  Payment.builder()
-    .userId("uuid-abc").orderId("uuid-pedido")
-    .amount(500.00).method(PIX).status(PENDING)
-    .build()
-  saved = repository.save(payment)        [1ª gravação, PENDING]
-  producer.publish(toEvent(saved))        → tópico payment.initiated
-  processed = process(saved)              [amount < 1000 → APPROVED]
-  repository.save(processed)              [2ª gravação, APPROVED]
-  producer.publish(toEvent(processed))    → tópico payment.approved
-  │
-  ▼
-Resultado: pagamento persistido com orderId preenchido,
-           consultável depois via GET /payments/{id} ou /payments/my
-```
-
-> Não há resposta HTTP neste fluxo — quem precisar saber o resultado consulta via REST depois, ou consome os eventos `payment.initiated`/`payment.approved`/`payment.failed` publicados ao final.
-
----
-
-### Fluxo 8 — Mensagem duplicada (idempotência)
-
-```
-A mesma mensagem de order.payment.requested chega uma segunda vez
-(reentrega do Kafka, ou reprocessamento manual)
-  { "orderId": "uuid-pedido", "userId": "uuid-abc", "amount": 500.00 }
-  │
-  ▼
-PaymentConsumer.consume() → service.createFromOrder(event)
-  │
-  ▼
-PaymentService.createFromOrder()
-  repository.existsByOrderId("uuid-pedido") → true (já processado no Fluxo 7)
-  loga aviso: "Pagamento já processado para orderId uuid-pedido, ignorando..."
-  retorna sem fazer nada
-  │
-  ▼
-Resultado: nenhum pagamento novo criado, nenhum evento novo publicado
-```
-
----
-
-### Fluxo 9 — Mensagem inválida no Kafka (campo ausente)
-
-```
-Mensagem publicada em order.payment.requested sem o campo amount:
-  { "orderId": "uuid-x", "userId": "uuid-abc" }
-  │
-  ▼
-PaymentConsumer.consume()
-  service.createFromOrder(event)   [dentro do try/catch]
-  │
-  ▼
-PaymentService.createFromOrder() → persistAndProcess()
-  repository.save(payment com amount = null)
-  Postgres rejeita: violação de constraint NOT NULL na coluna amount
-  exceção propaga de volta para o PaymentConsumer
-  │
-  ▼
-PaymentConsumer (catch)
-  loga ERROR: "Falha ao processar evento de order.payment.requested
-               (orderId=uuid-x): ..."
-  método retorna normalmente, sem propagar a exceção
-  │
-  ▼
-Resultado: mensagem descartada, offset avança, consumer segue ativo
-           e processa a próxima mensagem normalmente
-```
-
-> Mensagens com **JSON malformado** (não apenas campo ausente) seguem um caminho diferente: a falha ocorre na desserialização, antes do `PaymentConsumer.consume()` ser chamado — o `try/catch` acima não entra em ação. Esse cenário é tratado pelo comportamento padrão do Spring Kafka, que também não trava o consumer.
-
----
-
 ## 10. Estado Atual do Microsserviço
 
 ### Funcionalidades implementadas
 
-- [x] Criação de pagamento com status `PENDING` (via REST)
+- [x] Criação de pagamento com status `PENDING`
 - [x] Processamento de pagamento (simulação de gateway, regra determinística por valor)
 - [x] Transições de status `PENDING → APPROVED` ou `PENDING → FAILED`
-- [x] Eventos Kafka de saída (`payment.initiated`, `payment.approved`, `payment.failed`)
-- [x] Retry com fallback na publicação Kafka (Resilience4j)
-- [x] Recebimento de pedidos de pagamento via Kafka (`order.payment.requested`), de forma assíncrona e independente do REST
-- [x] Idempotência no fluxo Kafka, por correlação via `orderId` (checagem em aplicação + constraint única no banco)
-- [x] Tratamento de erro mínimo no Consumer (mensagem inválida ou malformada não trava o serviço)
+- [x] Eventos Kafka (`payment.initiated`, `payment.approved`, `payment.failed`)
 - [x] Consulta de pagamento por ID (com verificação de ownership)
-- [x] Listagem de pagamentos do usuário autenticado (inclui pagamentos de ambas as origens, REST e Kafka)
+- [x] Listagem de pagamentos do usuário autenticado
 - [x] Cancelamento de pagamento (apenas se `PENDING` — ver limitação prática na Seção 8)
-- [x] Autenticação via JWT RS256 (via módulo `shared`) — exclusiva do fluxo REST
-- [x] Extração segura do `userId` pelo claim `sub` do token (REST) ou diretamente do payload do evento (Kafka)
-- [x] Tratamento centralizado de erros com respostas padronizadas (fluxo REST)
-- [x] Validação de entrada com Bean Validation (aplicada automaticamente apenas no REST)
+- [x] Autenticação via JWT RS256 (via módulo `shared`)
+- [x] Extração segura do `userId` pelo claim `sub` do token
+- [x] Tratamento centralizado de erros com respostas padronizadas
+- [x] Validação de entrada com Bean Validation
 - [x] Registro no Eureka
 - [x] Rastreamento distribuído via OpenTelemetry → Jaeger
 - [x] Métricas expostas para Prometheus via `/actuator/prometheus`
@@ -1642,17 +1373,13 @@ Resultado: mensagem descartada, offset avança, consumer segue ativo
 
 ### Funcionalidades pendentes
 
-- [ ] Testes unitários e de integração (`PaymentService`, `PaymentProducer`, `PaymentConsumer`, Kafka via `EmbeddedKafka`)
+- [ ] Testes unitários e de integração (PaymentService, Kafka via EmbeddedKafka)
 - [ ] Serialização de `timestamp` como ISO-8601 no `PaymentEvent` (atualmente serializa como array Jackson — ver Limitações atuais)
 - [ ] Endpoint de webhook (`POST /payments/webhook`)
 - [ ] Proteção JWT no Kong para as rotas de `/payments`
-- [ ] Flyway para controle de migrações de banco (incluindo a constraint única de `order_id`)
+- [ ] Flyway para controle de migrações de banco
 - [ ] Métricas customizadas com Micrometer (contadores por status)
 - [ ] Paginação na listagem de pagamentos
-- [ ] DLQ (fila de mensagens mortas) e retry customizado no Consumer Kafka
-- [ ] Validação automática do `OrderPaymentRequestedEvent` (hoje as anotações existem mas não são aplicadas)
-- [ ] Inclusão de `orderId` no `PaymentEvent` (eventos de saída), para permitir correlação por quem os consumir
-- [ ] Implementação real do Producer Kafka do lado da Store, e validação ponta a ponta com ela (hoje validado apenas com publicação manual no tópico)
 
 ### Limitações atuais
 
@@ -1660,10 +1387,6 @@ Resultado: mensagem descartada, offset avança, consumer segue ativo
 - Com o processamento síncrono, todo pagamento criado já sai como `APPROVED` ou `FAILED` — o cancelamento (`PENDING` obrigatório) ficou praticamente inalcançável no fluxo real (ver Seção 8)
 - As rotas `/payments` no Kong não exigem JWT — a proteção existe apenas no nível da aplicação
 - `ddl-auto: update` — adequado para desenvolvimento, inadequado para produção
-- O Consumer Kafka não tem DLQ nem retry customizado — mensagens com falha são descartadas após a primeira tentativa, sem possibilidade de reprocessamento manual
-- A validação de `OrderPaymentRequestedEvent` não é automática — campos ausentes só são percebidos quando geram erro de constraint no banco
-- O tópico `order.payment.requested` é criado pelo próprio `payments`, mesmo sendo o consumidor e não o produtor — decisão temporária, já que a Store ainda não existe para criá-lo
-- O método de pagamento de todo pedido recebido via Kafka é sempre `PIX`, fixo no código — a Store não publica o método escolhido pelo cliente
 
 ### Débitos técnicos identificados
 
@@ -1675,9 +1398,6 @@ Resultado: mensagem descartada, offset avança, consumer segue ativo
 | Rotas sem JWT no Kong | Qualquer cliente externo pode chamar sem token se passar direto pelo Kong | Adicionar plugin JWT no `kong.yaml` |
 | `app.key.pub` no repositório (via shared) | Má prática de segurança — chaves não deveriam estar no código | Secrets do Docker/Kubernetes ou variável de ambiente |
 | `timestamp` serializado como array no `PaymentEvent` | Consumidores Kafka precisam de parser específico em vez de ISO-8601 padrão | Configurar Jackson para serializar `LocalDateTime` como String (`WRITE_DATES_AS_TIMESTAMPS = false`) |
-| Consumer sem DLQ | Mensagem com falha é perdida, sem chance de reprocessamento | Configurar `DeadLetterPublishingRecoverer` quando o nível de maturidade do projeto exigir |
-| Validação do `OrderPaymentRequestedEvent` não aplicada | Erros de campo aparecem como exceção genérica, não como mensagem de validação clara | Validar manualmente via `Validator` injetado no `PaymentConsumer`, ou tratar exceções de validação de forma específica |
-| `PaymentEvent` sem `orderId` | Quem consome os tópicos de saída não correlaciona com o pedido de origem da Store | Adicionar o campo `orderId` (nullable) ao `PaymentEvent` |
 
 ---
 
@@ -1688,12 +1408,10 @@ Consulte o arquivo `IMPLEMENTACAO.md` na raiz deste módulo para o plano detalha
 Resumo das próximas etapas em ordem:
 
 1. ~~**Etapa 1 — Processamento de pagamento**~~ — concluída (simulação de gateway, transições de status)
-2. ~~**Etapa 2 — Kafka (Producer)**~~ — concluída (tópicos de saída, producer, eventos `payment.initiated`/`payment.approved`/`payment.failed`)
-3. ~~**Etapa 3 — Resiliência Kafka**~~ — concluída (retry com fallback via Resilience4j)
-4. ~~**Etapa 4 — Kafka Consumer**~~ — concluída (recebimento de pedidos via `order.payment.requested`, idempotência por `orderId`, tratamento mínimo de erros)
-5. **Etapa 5 — Testes** — unitários (`PaymentService`, `PaymentProducer`, `PaymentConsumer`), integração (banco), Kafka (`EmbeddedKafka`)
-6. **Etapa 6 — Infraestrutura e integração** — Kong (proteção JWT nas rotas `/payments`), Flyway, correção da serialização do `timestamp`, definição de quem cria o tópico `order.payment.requested`
-7. **Etapa 7 — Validação completa do ecossistema** — fluxo ponta a ponta com `users` e demais serviços consumindo os eventos do Kafka, incluindo a Store publicando pedidos reais
+2. ~~**Etapa 2 — Kafka**~~ — concluída (tópicos, producer, eventos `payment.initiated`/`payment.approved`/`payment.failed`)
+3. **Etapa 3 — Testes** — unitários (`PaymentService`), integração (banco), Kafka (`EmbeddedKafka`)
+4. **Etapa 4 — Infraestrutura e integração** — Kong (proteção JWT nas rotas `/payments`), Flyway, correção da serialização do `timestamp`
+5. **Etapa 5 — Validação completa do ecossistema** — fluxo ponta a ponta com `users` e demais serviços consumindo os eventos do Kafka
 
 ---
 
@@ -1710,18 +1428,7 @@ Resumo das próximas etapas em ordem:
 
 ### Onde implementar novas regras de negócio
 
-**Sempre no `PaymentService`.** Nunca no controller, nunca no repository, nunca no consumer.
-
-### Onde adicionar uma nova porta de entrada assíncrona (novo Kafka Consumer)
-
-Se no futuro o `payments` precisar consumir um novo tópico (além de `order.payment.requested`):
-
-1. Declare o tópico em `config/KafkaConfig.java` como um novo bean `NewTopic`, se o `payments` for responsável por criá-lo
-2. Crie um DTO de entrada próprio em `dto/`, específico para o novo contrato — não reaproveite `OrderPaymentRequestedEvent` nem `PaymentRequest` para um payload diferente
-3. Se o novo DTO tiver um pacote diferente, ajuste `spring.json.trusted.packages` em `application.yaml` (ou aponte para o pacote `dto` inteiro, como já está hoje)
-4. Crie um novo método em `PaymentService` (ou reaproveite `persistAndProcess` se a regra de negócio for a mesma) — nunca coloque lógica de negócio diretamente na classe do consumer
-5. Crie a classe consumer em `consumer/`, com um único método anotado `@KafkaListener`, envolvendo a chamada ao service em `try/catch`, seguindo o mesmo padrão de `PaymentConsumer`
-6. Decida explicitamente a estratégia de idempotência (se aplicável) — não assuma que o Kafka entrega cada mensagem exatamente uma vez
+**Sempre no `PaymentService`.** Nunca no controller, nunca no repository.
 
 ### Onde adicionar novas consultas ao banco
 
@@ -1746,10 +1453,8 @@ Page<Payment> findByUserId(UUID userId, Pageable pageable);
 2. **O `userId` sempre vem do JWT** — nunca aceitar userId do body da requisição
 3. **Verificar ownership antes de qualquer operação** — sempre checar se o pagamento pertence ao usuário antes de retornar ou modificar
 4. **Lançar `ResponseStatusException` no service** — o `GlobalExceptionHandler` já trata automaticamente
-5. **Não colocar lógica de negócio no controller nem no consumer** — ambos são apenas tradutores entre o transporte (HTTP ou Kafka) e o service
+5. **Não colocar lógica de negócio no controller** — o controller é apenas tradutor entre HTTP e o service
 6. **Não criar `SecurityConfig` local** — a segurança vem do módulo `shared`; qualquer alteração nas regras de segurança deve ser feita em `services/shared/src/main/java/com/edu/infnet/pb/config/SecurityConfig.java`
-7. **Toda nova porta de entrada deve convergir para o mesmo núcleo de regra de negócio sempre que a regra for a mesma** — é o padrão usado entre `create()` e `createFromOrder()`, que compartilham `persistAndProcess()`. Evita duplicar regra de negócio entre REST e Kafka
-8. **Não assumir entrega única de mensagens Kafka** — o Kafka garante *at-least-once delivery*; qualquer novo consumer que crie dados (não apenas leia) precisa de uma estratégia de idempotência, como a checagem por `orderId` feita hoje
 
 ### Padrões já utilizados que devem ser mantidos
 
@@ -1767,48 +1472,39 @@ Page<Payment> findByUserId(UUID userId, Pageable pageable);
 
 ## 13. Resumo Final
 
-O microsserviço `payments` é um **Resource Server OAuth2** que gerencia o ciclo de vida básico de pagamentos dentro da plataforma PB Mono Repo, com duas portas de entrada independentes — REST (síncrona) e Kafka (assíncrona) — que compartilham a mesma regra de negócio.
+O microsserviço `payments` é um **Resource Server OAuth2** que gerencia o ciclo de vida básico de pagamentos dentro da plataforma PB Mono Repo.
 
-**Stack:** Java 25 + Spring Boot 3.5.14 + Spring Security (via `shared`) + OAuth2 Resource Server (via `shared`) + Spring Data JPA + PostgreSQL + Spring Kafka + Resilience4j.
+**Stack:** Java 25 + Spring Boot 3.5.14 + Spring Security (via `shared`) + OAuth2 Resource Server (via `shared`) + Spring Data JPA + PostgreSQL.
 
-**Segurança:** Valida tokens JWT RS256 emitidos pelo microsserviço `users` usando a chave pública RSA fornecida pelo módulo `shared`. O `userId` é sempre extraído do campo `sub` do token no fluxo REST — nunca aceito do corpo da requisição. No fluxo Kafka, não há JWT: o `userId` vem diretamente do payload da mensagem, e a confiança nesse dado depende de quem publica no tópico (a Store). O `SecurityConfig` e o `app.key.pub` vivem em `services/shared/`, não neste módulo.
+**Segurança:** Valida tokens JWT RS256 emitidos pelo microsserviço `users` usando a chave pública RSA fornecida pelo módulo `shared`. O `userId` é sempre extraído do campo `sub` do token — nunca aceito do corpo da requisição. O `SecurityConfig` e o `app.key.pub` vivem em `services/shared/`, não neste módulo.
 
-**Endpoints REST disponíveis:**
+**Endpoints disponíveis:**
 
 | Método | Rota | O que faz |
 |---|---|---|
 | `POST` | `/payments` | Cria pagamento, processa (simulação de gateway) e publica eventos no Kafka; retorna `APPROVED` ou `FAILED` |
 | `GET` | `/payments/{id}` | Consulta pagamento (apenas o dono) |
-| `GET` | `/payments/my` | Lista todos os pagamentos do usuário autenticado (inclui pagamentos criados via Kafka) |
+| `GET` | `/payments/my` | Lista todos os pagamentos do usuário autenticado |
 | `PATCH` | `/payments/{id}/cancel` | Cancela pagamento se estiver em `PENDING` (ver limitação prática na Seção 8) |
 
-**Entrada assíncrona via Kafka:**
-
-| Tópico consumido | O que faz |
-|---|---|
-| `order.payment.requested` | `PaymentConsumer` recebe `{orderId, userId, amount}`, cria e processa o pagamento com `method = PIX`, com idempotência por `orderId` |
-
 **Regras centrais:**
-- Todo pagamento nasce `PENDING`, é persistido nesse estado e em seguida processado de forma síncrona (`amount < 1000.00` → `APPROVED`; `amount >= 1000.00` → `FAILED`) — independente de ter sido criado via REST ou via Kafka
+- Todo pagamento nasce `PENDING`, é persistido nesse estado e em seguida processado de forma síncrona (`amount < 1000.00` → `APPROVED`; `amount >= 1000.00` → `FAILED`)
 - Cada transição de status publica um evento Kafka (`payment.initiated`, `payment.approved` ou `payment.failed`)
 - Apenas o dono do pagamento pode consultá-lo ou cancelá-lo
 - Cancelamento só é permitido no status `PENDING`
-- Pagamentos via Kafka exigem `orderId` único — uma segunda mensagem com o mesmo `orderId` é ignorada, não gera duplicata
-- Erros do fluxo REST retornam sempre JSON com `timestamp`, `status` e `message`; erros do fluxo Kafka são logados e a mensagem é descartada, sem resposta a ninguém
+- Erros retornam sempre JSON com `timestamp`, `status` e `message`
 
-**O que ainda não está implementado:** testes (unitários e de integração, incluindo o Consumer), correção da serialização do `timestamp` no evento Kafka (atualmente array Jackson, não ISO-8601), proteção JWT no Kong, Flyway para migrações, DLQ/retry customizado no Consumer, validação automática do evento de entrada, inclusão de `orderId` nos eventos de saída.
+**O que ainda não está implementado:** testes (unitários e de integração), correção da serialização do `timestamp` no evento Kafka (atualmente array Jackson, não ISO-8601), proteção JWT no Kong, Flyway para migrações.
 
 **Onde mexer para cada tarefa:**
 
 | Tarefa | Arquivo |
 |---|---|
-| Novo endpoint REST | `PaymentController` + `PaymentService` |
-| Novo Kafka Consumer | `consumer/` (nova classe) + `PaymentService` + `KafkaConfig` (se precisar declarar tópico) |
+| Novo endpoint | `PaymentController` + `PaymentService` |
 | Nova regra de negócio | `PaymentService` |
 | Nova consulta ao banco | `PaymentRepository` |
-| Nova validação de entrada REST | `PaymentRequest` |
-| Novo contrato de evento Kafka recebido | Novo DTO em `dto/` (não reaproveitar `OrderPaymentRequestedEvent`) |
-| Novo tipo de erro tratado (REST) | `GlobalExceptionHandler` |
+| Nova validação de entrada | `PaymentRequest` |
+| Novo tipo de erro tratado | `GlobalExceptionHandler` |
 | Configuração de segurança | `services/shared/.../SecurityConfig.java` |
 | Nova configuração da aplicação | `application.yaml` |
 | Documentação da API | `OpenAPIConfig` |

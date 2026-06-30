@@ -22,8 +22,4 @@ public class KafkaConfig {
         return new NewTopic("payment.failed", 1, (short) 1);
     }
 
-    @Bean
-    public NewTopic orderPaymentRequested() {
-        return new NewTopic("order.payment.requested", 1, (short) 1);
-    }
 }

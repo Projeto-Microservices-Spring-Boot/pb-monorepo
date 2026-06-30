@@ -10,7 +10,7 @@ public class TradeStickerResponse {
 
     private StickerResponse sticker;
     private Integer quantity;
-    //Converte a entity UseCollection em dto
+
     public static TradeStickerResponse fromEntity(Sticker sticker, Integer quantity) {
         return TradeStickerResponse.builder()
                 .sticker(StickerResponse.fromEntity(sticker))
