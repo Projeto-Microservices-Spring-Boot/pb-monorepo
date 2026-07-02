@@ -1,7 +1,6 @@
 package com.edu.infnet.pb.store.kafka.consumer;
 
 import com.edu.infnet.pb.store.domain.usuario.UserReference;
-import com.edu.infnet.pb.store.kafka.event.UserEvent;
 import com.edu.infnet.pb.store.repository.UserReferenceRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -18,42 +17,50 @@ public class UserEventConsumer {
     private final UserReferenceRepository userReferenceRepository;
     private final ObjectMapper objectMapper;
 
-    public UserEventConsumer(UserReferenceRepository userReferenceRepository, ObjectMapper objectMapper) {
+    public UserEventConsumer(UserReferenceRepository userReferenceRepository,
+                             ObjectMapper objectMapper) {
         this.userReferenceRepository = userReferenceRepository;
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "user.events", groupId = "store-group")
+    @KafkaListener(
+            topics = "${app.kafka.topics.user-events}",
+            groupId = "store-group"
+    )
     @Transactional
     public void onUserEvent(String message) {
         try {
             UserEvent event = objectMapper.readValue(message, UserEvent.class);
-            log.info("Evento de usuário recebido: externalId={}, action={}", event.externalId(), event.action());
 
-            switch (event.action().toUpperCase()) {
-                case "CREATED", "UPDATED" -> {
-                    UserReference userRef = userReferenceRepository
-                            .findByExternalId(event.externalId())
-                            .orElse(new UserReference(event.externalId(), event.nome(), event.email()));
-
-                    userRef.setNome(event.nome());
-                    userRef.setEmail(event.email());
-                    userRef.setAtivo(true);
-                    userReferenceRepository.save(userRef);
-                    log.info("UserReference sincronizado: {}", event.externalId());
-                }
-                case "DELETED" -> {
-                    userReferenceRepository.findByExternalId(event.externalId())
-                            .ifPresent(userRef -> {
-                                userRef.setAtivo(false);
-                                userReferenceRepository.save(userRef);
-                                log.info("UserReference desativado: {}", event.externalId());
-                            });
-                }
-                default -> log.warn("Ação desconhecida para evento de usuário: {}", event.action());
+            if (event.externalId() == null || event.externalId().isBlank()) {
+                log.warn("Evento de usuário ignorado por externalId inválido");
+                return;
             }
+
+            UserReference userReference = userReferenceRepository.findByExternalId(event.externalId())
+                    .orElseGet(UserReference::new);
+
+            userReference.setExternalId(event.externalId());
+            userReference.setNome(event.nome());
+            userReference.setEmail(event.email());
+            userReference.setAtivo(event.ativo());
+
+            userReferenceRepository.save(userReference);
+
+            log.info("Usuário sincronizado com sucesso: externalId={}, email={}",
+                    event.externalId(), event.email());
+
         } catch (Exception e) {
             log.error("Erro ao processar evento de usuário: {}", e.getMessage(), e);
         }
+    }
+
+    public record UserEvent(
+            String externalId,
+            String nome,
+            String email,
+            String tipo,
+            Boolean ativo
+    ) {
     }
 }

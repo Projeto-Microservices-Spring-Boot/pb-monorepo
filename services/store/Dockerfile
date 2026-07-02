@@ -13,7 +13,8 @@ FROM deps AS build
 
 COPY src ./src
 
-RUN mvn clean package -DskipTests
+RUN mvn clean package -Dmaven.test.skip=true
+
 
 FROM eclipse-temurin:25-jre-alpine AS run
 

@@ -7,10 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Controller legado mantido para compatibilidade.
- * Novos endpoints devem usar /api/publico/categorias ou /api/admin/categorias.
- */
+
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {

@@ -1,104 +1,133 @@
 package com.edu.infnet.pb.store.exception;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.OffsetDateTime;
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-
-    public record ErrorResponse(
-            int status,
-            String error,
-            String message,
-            LocalDateTime timestamp
-    ) {}
-
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
-        log.warn("Recurso não encontrado: {}", ex.getMessage());
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "NOT_FOUND",
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-    }
+    public ResponseEntity<ApiError> handleResourceNotFound(
+            ResourceNotFoundException ex,
+            HttpServletRequest request) {
 
-    @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
-        log.warn("Recurso estático/rota não encontrada: {}", ex.getResourcePath());
-        ErrorResponse error = new ErrorResponse(
+        ApiError error = new ApiError(
+                OffsetDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
-                "NOT_FOUND",
                 "Recurso não encontrado",
-                LocalDateTime.now()
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
         );
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
-        log.warn("Erro de negócio: {}", ex.getMessage());
-        ErrorResponse error = new ErrorResponse(
+    public ResponseEntity<ApiError> handleBusinessException(
+            BusinessException ex,
+            HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                OffsetDateTime.now(),
                 HttpStatus.UNPROCESSABLE_ENTITY.value(),
-                "BUSINESS_ERROR",
+                "Erro de negócio",
                 ex.getMessage(),
-                LocalDateTime.now()
+                request.getRequestURI(),
+                null
         );
+
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
-        Map<String, String> fieldErrors = new HashMap<>();
-        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
-            fieldErrors.put(fieldError.getField(), fieldError.getDefaultMessage());
-        }
+    public ResponseEntity<ApiError> handleValidationException(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "VALIDATION_ERROR");
-        response.put("errors", fieldErrors);
-        response.put("timestamp", LocalDateTime.now());
+        List<ApiValidationError> details = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(this::toValidationError)
+                .toList();
 
-        return ResponseEntity.badRequest().body(response);
+        ApiError error = new ApiError(
+                OffsetDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Dados inválidos",
+                "Um ou mais campos estão inválidos",
+                request.getRequestURI(),
+                details
+        );
+
+        return ResponseEntity.badRequest().body(error);
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
-        log.warn("Estado inválido: {}", ex.getMessage());
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                "CONFLICT",
-                ex.getMessage(),
-                LocalDateTime.now()
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolation(
+            ConstraintViolationException ex,
+            HttpServletRequest request) {
+
+        List<ApiValidationError> details = ex.getConstraintViolations()
+                .stream()
+                .map(v -> new ApiValidationError(v.getPropertyPath().toString(), v.getMessage()))
+                .toList();
+
+        ApiError error = new ApiError(
+                OffsetDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Parâmetros inválidos",
+                "Um ou mais parâmetros estão inválidos",
+                request.getRequestURI(),
+                details
         );
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+
+        return ResponseEntity.badRequest().body(error);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        log.error("Erro interno não tratado", ex);
-        ErrorResponse error = new ErrorResponse(
+    public ResponseEntity<ApiError> handleGenericException(
+            Exception ex,
+            HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                OffsetDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "INTERNAL_ERROR",
-                "Ocorreu um erro interno. Tente novamente mais tarde.",
-                LocalDateTime.now()
+                "Erro interno",
+                "Ocorreu um erro inesperado ao processar a requisição",
+                request.getRequestURI(),
+                null
         );
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    private ApiValidationError toValidationError(FieldError fieldError) {
+        return new ApiValidationError(fieldError.getField(), fieldError.getDefaultMessage());
+    }
+
+    public record ApiError(
+            OffsetDateTime timestamp,
+            Integer status,
+            String error,
+            String message,
+            String path,
+            List<ApiValidationError> details
+    ) {
+    }
+
+    public record ApiValidationError(
+            String field,
+            String message
+    ) {
     }
 }

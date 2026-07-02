@@ -17,6 +17,9 @@ spring:
 
   kafka:
     bootstrap-servers: kafka:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
   security:
     oauth2:
@@ -25,14 +28,16 @@ spring:
           public:
             key: classpath:app.pub
 
-
 app:
   kafka:
-    bootstrap-servers: kafka:29092
     topics:
       stock-updated: stock-updated
-      payment-confirmed: payment.confirmed
-      user-events: user.events
+      payment-confirmed: payment-confirmed
+      user-events: user-events
+      order-created: order-created
+      order-cancelled: order-cancelled
+      order-status-changed: order-status-changed
+
 
 server:
   port: 8088

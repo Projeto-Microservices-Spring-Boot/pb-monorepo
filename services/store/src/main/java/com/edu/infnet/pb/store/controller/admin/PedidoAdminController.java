@@ -3,6 +3,7 @@ package com.edu.infnet.pb.store.controller.admin;
 import com.edu.infnet.pb.store.domain.pedido.Pedido;
 import com.edu.infnet.pb.store.domain.pedido.StatusPedido;
 import com.edu.infnet.pb.store.dto.response.PedidoResponse;
+import com.edu.infnet.pb.store.exception.BusinessException;
 import com.edu.infnet.pb.store.exception.ResourceNotFoundException;
 import com.edu.infnet.pb.store.kafka.event.OrderStatusChangedEvent;
 import com.edu.infnet.pb.store.kafka.producer.OrderEventProducer;
@@ -37,8 +38,12 @@ public class PedidoAdminController {
     public ResponseEntity<Page<PedidoResponse>> listarTodos(
             @CurrentUser UserPrincipal user,
             @PageableDefault(size = 20) Pageable pageable) {
+
+        validarAdmin(user);
+
         Page<PedidoResponse> pedidos = pedidoRepository.findAll(pageable)
                 .map(pedidoMapper::toResponse);
+
         return ResponseEntity.ok(pedidos);
     }
 
@@ -46,8 +51,12 @@ public class PedidoAdminController {
     public ResponseEntity<PedidoResponse> buscarPorId(
             @CurrentUser UserPrincipal user,
             @PathVariable Long id) {
+
+        validarAdmin(user);
+
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", id));
+
         return ResponseEntity.ok(pedidoMapper.toResponse(pedido));
     }
 
@@ -57,14 +66,27 @@ public class PedidoAdminController {
             @CurrentUser UserPrincipal user,
             @PathVariable Long id,
             @RequestParam StatusPedido status) {
+
+        validarAdmin(user);
+
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", id));
 
         StatusPedido statusAnterior = pedido.getStatus();
+
+        if (statusAnterior == status) {
+            throw new BusinessException("O pedido já está com o status: " + status.name());
+        }
+
+        if (!transicaoValida(statusAnterior, status)) {
+            throw new BusinessException(
+                    "Transição de status inválida: " + statusAnterior.name() + " -> " + status.name()
+            );
+        }
+
         pedido.setStatus(status);
         pedido = pedidoRepository.save(pedido);
 
-        // Publicar evento de mudança de status
         orderEventProducer.sendStatusChanged(new OrderStatusChangedEvent(
                 pedido.getId(),
                 pedido.getUsuario().getExternalId(),
@@ -73,5 +95,32 @@ public class PedidoAdminController {
         ));
 
         return ResponseEntity.ok(pedidoMapper.toResponse(pedido));
+    }
+
+    private void validarAdmin(UserPrincipal user) {
+        if (user == null || !user.isAdmin()) {
+            throw new BusinessException("Acesso negado. Apenas administradores podem realizar esta operação.");
+        }
+    }
+
+    private boolean transicaoValida(StatusPedido atual, StatusPedido novo) {
+        return switch (atual) {
+            case PENDENTE -> novo == StatusPedido.AGUARDANDO_PAGAMENTO
+                    || novo == StatusPedido.PAGO
+                    || novo == StatusPedido.CANCELADO;
+
+            case AGUARDANDO_PAGAMENTO -> novo == StatusPedido.PAGO
+                    || novo == StatusPedido.CANCELADO;
+
+            case PAGO -> novo == StatusPedido.EM_SEPARACAO
+                    || novo == StatusPedido.CANCELADO;
+
+            case EM_SEPARACAO -> novo == StatusPedido.ENVIADO
+                    || novo == StatusPedido.CANCELADO;
+
+            case ENVIADO -> novo == StatusPedido.ENTREGUE;
+
+            case ENTREGUE, CANCELADO -> false;
+        };
     }
 }

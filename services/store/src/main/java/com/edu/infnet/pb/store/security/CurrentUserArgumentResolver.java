@@ -8,12 +8,11 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-/**
- * Resolve parâmetros anotados com @CurrentUser,
- * injetando o UserPrincipal extraído pelo interceptor.
- */
+
 @Component
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
+
+    private static final String USER_PRINCIPAL_ATTR = "USER_PRINCIPAL_ATTR";
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -27,7 +26,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
                                   NativeWebRequest webRequest,
                                   WebDataBinderFactory binderFactory) {
         return webRequest.getAttribute(
-                DevAuthenticationInterceptor.USER_PRINCIPAL_ATTR,
+                USER_PRINCIPAL_ATTR,
                 RequestAttributes.SCOPE_REQUEST
         );
     }
