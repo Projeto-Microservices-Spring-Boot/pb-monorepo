@@ -11,7 +11,33 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+
+  flyway:
+    enabled: false
+
+  kafka:
+    bootstrap-servers: kafka:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public:
+            key: classpath:app.pub
+
+app:
+  kafka:
+    topics:
+      stock-updated: stock-updated
+      payment-confirmed: payment-confirmed
+      user-events: user-events
+      order-created: order-created
+      order-cancelled: order-cancelled
+      order-status-changed: order-status-changed
+
 
 server:
   port: 8088
@@ -21,7 +47,7 @@ eureka:
     instance-id: ${spring.application.name}:${random.value}
   client:
     service-url:
-      defaultZone: http://eureka:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
 
@@ -34,7 +60,7 @@ logging:
 management:
   tracing:
     sampling:
-      probability: 1.0 # 100% dos tracings gerados será exportado
+      probability: 1.0
 
   endpoints:
     web:
@@ -43,6 +69,7 @@ management:
           - health
           - prometheus
           - info
+          - mappings
 
 otel:
   exporter:

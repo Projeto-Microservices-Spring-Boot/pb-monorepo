@@ -1,0 +1,5 @@
+$kind: http-request
+name: Health
+url: "{{gatewayUrl}}/users/public/actuator/health"
+method: GET
+order: 1047614082518780

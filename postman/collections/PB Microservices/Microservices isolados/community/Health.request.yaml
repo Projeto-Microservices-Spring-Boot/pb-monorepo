@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{communityUrl}}/actuator/health"
+method: GET
+headers:
+  Accept: application/json
+order: 1000

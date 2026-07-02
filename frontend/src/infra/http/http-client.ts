@@ -2,13 +2,41 @@ import axios from 'axios';
 import { env } from '@/infra/env/client';
 
 import type { HttpRequest, IHttpClient } from './http-client.types';
-import type { AxiosError, AxiosInstance } from 'axios';
+import type {
+  AxiosError,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+} from 'axios';
+import { useAuthStore } from '../stores/useAuth.store';
 
 const BASE_URL = env.NEXT_PUBLIC_API_URL;
 
 // HTTP client customizado
 export class HttpClient implements IHttpClient {
-  constructor(private api: AxiosInstance = axios) {}
+  constructor(private api: AxiosInstance = axios) {
+    this.interceptors();
+  }
+
+  private interceptors() {
+    this.api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+      const accessToken = useAuthStore.getState().accessToken;
+      if (accessToken) {
+        config.headers.set('Authorization', `Bearer ${accessToken}`);
+      }
+      return config;
+    });
+
+    this.api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          useAuthStore.getState().logout();
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      },
+    );
+  }
 
   static create(): IHttpClient {
     return new HttpClient();

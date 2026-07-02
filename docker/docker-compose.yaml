@@ -1,0 +1,336 @@
+name: pb-monorepo
+
+volumes:
+  pg_data:
+  redis_data:
+  kafka_data:
+  grafana_data:
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL
+  # ---------------------------------------------------------------------------
+  pg:
+    image: postgres:18.3-alpine
+    container_name: pb_databases
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: admin
+      POSTGRES_EXTRA_DATABASES: "store, community, users, payments, geolocalization, stickers, adm_dashboard"
+    volumes:
+      - pg_data:/var/lib/postgresql
+      - ./postgres:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
+
+  # ---------------------------------------------------------------------------
+  # Redis
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7.4-alpine
+    container_name: pb_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # ---------------------------------------------------------------------------
+  # Kong API Gateway
+  # ---------------------------------------------------------------------------
+  kong:
+    image: kong:3.9.1
+    container_name: pb_kong
+    environment:
+      KONG_DATABASE: "off" # Modo DB-less -> (kong sem banco de dados)
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001 # Admin API -> escuta todas interfaces na porta 8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002 # URL da UI
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yaml # Caminho do arquivo de config do Kong
+
+      # Logs do Kong API Gateway
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+    ports:
+      - "8000:8000" # Proxy (API)
+      - "8001:8001" # API (Admin)
+      - "8002:8002" # UI -> http://localhost:8002
+      - "8443:8443" # Proxy SSL (HTTPs)
+      - "8444:8444" # API (Admin) (HTTPs)
+    volumes:
+      - ./kong:/kong:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Kafka (KRaft) + Kafka UI
+  # ---------------------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.8.0
+    container_name: pb_kafka
+    ports:
+      - "9092:9092" # -> localhost
+      - "29092:29092" # ->  rede interna
+      - "29093:29093" # ->  controller
+    environment:
+      CLUSTER_ID: XVmXn3yFSg-B4UD_uAgnCw # -> ID único do cluster
+      KAFKA_NODE_ID: "1" # -> ID único do broker
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false" # -> cria tópicos automaticamente ao usá-los (desligar em prod)
+      KAFKA_PROCESS_ROLES: "broker,controller" # -> define que este node é broker + controller
+
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER" #  -> nome do listener usado pelo controller
+      # QUORUM_VOTERS -> elege o Controller master do cluster quando o atual cai
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
+
+      # PLAINTEXT 9092 → escuta na rede interna do container
+      # PLAINTEXT_HOST 29092 → escuta no localhost
+      # CONTROLLER 29093 → escuta o controller na rede interna do container
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://kafka:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+
+      # Configurações de replicação para tópicos do Kafka definidas como "1" para ambiente de dev
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: kafka-broker-api-versions --bootstrap-server=localhost:9092 || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  kafka-ui:
+    image: kafbat/kafka-ui:v1.5.0
+    container_name: pb_kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "kafka-ui"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
+      DYNAMIC_CONFIG_ENABLED: "true"
+
+  # ---------------------------------------------------------------------------
+  # Toxiproxy
+  # ---------------------------------------------------------------------------
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy
+    container_name: pb_toxiproxy
+    ports:
+      - "8474:8474"
+
+  # ---------------------------------------------------------------------------
+  # Prometheus + Grafana
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v3.11.3
+    container_name: pb_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:11.5.10
+    container_name: pb_grafana
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana:/etc/grafana/conf
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+
+  # ---------------------------------------------------------------------------
+  # Jaeger Tracing
+  # ---------------------------------------------------------------------------
+
+  jaeger:
+    container_name: pb_tracing
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - "16686:16686" # UI
+      - "14268:14268" # Traces HTTP
+      - "4317:4317" # OTLP/gRPC
+      - "4318:4318" # OTLP/HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+
+  # ---------------------------------------------------------------------------
+  # Swagger UI — Documentação centralizada dos microservices
+  # ---------------------------------------------------------------------------
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.18.3
+    container_name: pb_swagger-ui
+    ports:
+      - "8089:8080" 
+    environment:
+      URLS: "[{\"url\":\"http://localhost:8000/docs/users/v3/api-docs\",\"name\":\"Users\"},{\"url\":\"http://localhost:8000/docs/adm-dashboard/v3/api-docs\",\"name\":\"Adm Dashboard\"},{\"url\":\"http://localhost:8000/docs/community/v3/api-docs\",\"name\":\"Community\"},{\"url\":\"http://localhost:8000/docs/geolocalization/v3/api-docs\",\"name\":\"Geolocalization\"},{\"url\":\"http://localhost:8000/docs/payments/v3/api-docs\",\"name\":\"Payments\"},{\"url\":\"http://localhost:8000/docs/stickers/v3/api-docs\",\"name\":\"Stickers\"},{\"url\":\"http://localhost:8000/docs/store/v3/api-docs\",\"name\":\"Store\"}]"
+      QUERY_CONFIG_ENABLED: "true"
+      PERSIST_AUTHORIZATION: "true"
+      DISPLAY_REQUEST_DURATION: "true"
+    depends_on:
+      kong:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Microservices + Eureka Server
+  # ---------------------------------------------------------------------------
+
+  eureka:
+    container_name: eureka-server
+    build:
+      context: ../services/eureka-server/
+      dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
+    ports:
+      - "8761:8761"
+
+  adm-dashboard:
+    container_name: adm-dashboard-service
+    build:
+      context: ../services/adm-dashboard/
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
+    depends_on:
+      pg:
+        condition: service_healthy
+      kong: 
+         condition: service_healthy  
+
+  users:
+    container_name: users-service
+    build:
+      context: ../ # raiz do monorepo
+      dockerfile: services/users/Dockerfile
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
+    depends_on:
+      pg:
+        condition: service_healthy
+      kong: 
+         condition: service_healthy  
+
+  community:
+    container_name: community-server
+    build:
+      context: ../services/community/
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
+    depends_on:
+      pg:
+        condition: service_healthy
+      kong: 
+         condition: service_healthy  
+
+  geolocalization:
+    container_name: geolocalization-service
+    build:
+      context: ../services/geolocalization/
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
+    depends_on:
+      pg:
+        condition: service_healthy
+      kong: 
+         condition: service_healthy  
+
+  payments:
+    container_name: payments-service
+    build:
+      context: ../services/payments/
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
+    depends_on:
+      pg:
+        condition: service_healthy
+      kong: 
+         condition: service_healthy  
+
+  stickers:
+    container_name: stickers-service
+    build:
+      context: ../services/stickers/
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8087"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
+    depends_on:
+      pg:
+        condition: service_healthy
+      kong: 
+         condition: service_healthy  
+
+  store:
+    container_name: store-service
+    build:
+      context: ../services/store/
+      dockerfile: Dockerfile
+    ports:
+      - "8088:8088"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 4
+    depends_on:
+      pg:
+        condition: service_healthy
+      kong: 
+         condition: service_healthy  

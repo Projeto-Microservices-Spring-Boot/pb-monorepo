@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://pb_databases:5432/postgres
+    username: admin
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
